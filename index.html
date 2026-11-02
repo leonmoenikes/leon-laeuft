@@ -5,161 +5,277 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Intervall">
-<meta name="theme-color" content="#0b0f14">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
 <link rel="apple-touch-icon" id="icon">
 <title>Intervall-Lauf</title>
 <script>
 // App-Icon zur Laufzeit erzeugen (für "Zum Home-Bildschirm")
 (function(){
   var c=document.createElement('canvas');c.width=c.height=180;var x=c.getContext('2d');
-  x.fillStyle='#0b0f14';x.fillRect(0,0,180,180);
-  x.strokeStyle='#ff7a1a';x.lineWidth=14;x.beginPath();x.arc(90,98,58,0,Math.PI*2);x.stroke();
-  x.fillStyle='#ff7a1a';x.fillRect(78,14,24,16);
-  x.fillStyle='#e8edf2';x.font='bold 54px -apple-system,Helvetica,Arial';x.textAlign='center';x.textBaseline='middle';x.fillText('IV',90,100);
+  var g=x.createLinearGradient(0,0,0,180);g.addColorStop(0,'#ff9f0a');g.addColorStop(1,'#ff6b00');
+  x.fillStyle=g;x.fillRect(0,0,180,180);
+  x.strokeStyle='rgba(255,255,255,.35)';x.lineWidth=16;x.beginPath();x.arc(90,96,52,0,Math.PI*2);x.stroke();
+  x.strokeStyle='#fff';x.lineCap='round';x.beginPath();x.arc(90,96,52,-Math.PI/2,Math.PI*0.55);x.stroke();
+  x.fillStyle='#fff';x.fillRect(78,18,24,12);
   document.getElementById('icon').href=c.toDataURL('image/png');
 })();
 </script>
 <style>
-:root{--bg:#0b0f14;--card:#151b23;--line:#243040;--tx:#e8edf2;--mut:#8a98a8;--acc:#ff7a1a;--ok:#2ecc71;--warn:#f5b301;--bad:#ff4d4d;--blue:#3b82f6}
+:root{
+  --bg:#f2f2f7;--card:#fff;--card2:#f2f2f7;--sep:rgba(60,60,67,.18);--tx:#000;--mut:rgba(60,60,67,.6);
+  --fill:rgba(120,120,128,.16);--blue:#007aff;--green:#34c759;--orange:#ff9500;--red:#ff3b30;--yellow:#ffcc00;
+  --bar:rgba(249,249,249,.88)
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#000;--card:#1c1c1e;--card2:#2c2c2e;--sep:rgba(84,84,88,.6);--tx:#fff;--mut:rgba(235,235,245,.6);
+  --fill:rgba(120,120,128,.32);--blue:#0a84ff;--green:#30d158;--orange:#ff9f0a;--red:#ff453a;--yellow:#ffd60a;
+  --bar:rgba(29,29,31,.88)
+}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 [hidden]{display:none!important}
-html,body{margin:0;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif}
-.view{display:none;min-height:100dvh;padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 96px)}
+html,body{margin:0;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased;-webkit-user-select:none;user-select:none}
+button{font-family:inherit}
+.view{display:none;min-height:100dvh;padding:calc(env(safe-area-inset-top) + 8px) 16px calc(env(safe-area-inset-bottom) + 100px)}
 .view.on{display:block}
-h1{font-size:28px;margin:6px 0 14px}h2{font-size:20px;margin:4px 0 10px}h3{margin:0 0 4px;font-size:18px}
-.muted{color:var(--mut);font-size:14px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
-.card.tap:active{background:#1b2430}
-.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
-.btns{display:flex;gap:10px;margin-top:12px}
-.btn{flex:1;border:1px solid var(--line);background:#1d2631;color:var(--tx);font-size:17px;padding:14px;border-radius:14px;font-weight:600}
-.btn.primary{background:var(--acc);border-color:var(--acc);color:#111}
-.btn.danger{color:var(--bad)}
-.btn.big{font-size:22px;padding:20px;width:100%;margin-top:14px}
-.btn:active{opacity:.8}
-.link{background:none;border:0;color:var(--acc);font-size:15px;padding:6px}
-label{display:block;font-size:13px;color:var(--mut);margin:10px 0 0}
-input[type=text],input[type=number],input:not([type]){width:100%;margin-top:4px;background:#0f141b;border:1px solid var(--line);border-radius:10px;color:var(--tx);font-size:18px;padding:10px 12px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.paceinp{display:flex;align-items:center;gap:6px}.paceinp input{text-align:center}
-.tabbar{position:fixed;left:0;right:0;bottom:0;display:flex;background:rgba(15,20,27,.96);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);backdrop-filter:blur(10px)}
-.tabbar button{flex:1;background:none;border:0;color:var(--mut);font-size:13px;padding:10px 0 8px}
-.tabbar button b{display:block;font-size:22px;margin-bottom:2px}
-.tabbar button.on{color:var(--acc)}
-.sw{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:17px;color:var(--tx);margin:0}
-.sw:last-child{border:0}
-.sw input[type=checkbox]{width:26px;height:26px;accent-color:var(--acc)}
-input[type=range]{width:100%;accent-color:var(--acc)}
-table{width:100%;border-collapse:collapse;font-size:14px}
-th,td{text-align:right;padding:8px 4px;border-bottom:1px solid var(--line)}th:first-child,td:first-child{text-align:left}
-th{color:var(--mut);font-weight:500}
-.stat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
-.stat div b{display:block;font-size:20px}
-.stat div small{color:var(--mut)}
+.large{font-size:34px;font-weight:700;letter-spacing:.37px;margin:14px 4px 14px}
+.navbar{display:flex;align-items:center;justify-content:space-between;height:44px;margin:0 -4px 8px}
+.navbar b{font-size:17px;font-weight:600}
+.navbar button{background:none;border:0;color:var(--blue);font-size:17px;padding:8px 4px;min-width:80px}
+.navbar button:last-child{text-align:right;font-weight:600}
+.navbar button:first-child{text-align:left}
+.foot{font-size:13px;color:var(--mut);margin:8px 16px 0;line-height:1.35}
+.head{font-size:13px;color:var(--mut);text-transform:uppercase;margin:22px 16px 6px;letter-spacing:-.08px}
+.group{background:var(--card);border-radius:12px;overflow:hidden}
+.cell{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:46px;padding:0 16px;font-size:17px;position:relative}
+.cell+.cell::before{content:"";position:absolute;top:0;left:16px;right:0;height:.5px;background:var(--sep)}
+.cell .l{flex:0 0 auto}
+.cell .v{flex:1;text-align:right;color:var(--mut)}
+.cell input[type=text],.cell input[type=number]{flex:1;min-width:0;background:none;border:0;outline:0;font-size:17px;color:var(--blue);text-align:right;padding:12px 0;font-family:inherit;-webkit-user-select:text;user-select:text}
+.cell input[type=text]{color:var(--tx)}
+.cell input::placeholder{color:var(--mut)}
+.pace{display:flex;align-items:center;gap:2px;color:var(--mut)}
+.pace input{width:44px!important;flex:none!important}
+.btn{border:0;border-radius:12px;font-size:17px;font-weight:600;padding:14px;background:var(--fill);color:var(--blue);width:100%}
+.btn:active{opacity:.6}
+.btn.fill{background:var(--blue);color:#fff}
+.btn.red{color:var(--red)}
+.btn.sm{padding:9px 16px;font-size:15px;border-radius:99px;width:auto}
+.btnrow{display:flex;gap:10px;margin-top:12px}
+.btnrow .btn{flex:1}
+.link{background:none;border:0;color:var(--blue);font-size:15px}
+.link.red{color:var(--red)}
+/* Plan-Karten */
+.plan{padding:16px}
+.plan h3{margin:0 0 4px;font-size:20px;font-weight:600}
+.plan .sub{font-size:15px;color:var(--mut);line-height:1.35}
+.plan .btnrow{margin-top:14px}
+.plan{margin-bottom:12px}
+/* Switch */
+.sw{appearance:none;-webkit-appearance:none;width:51px;height:31px;border-radius:99px;background:var(--fill);position:relative;transition:background .25s;flex:none;outline:0;margin:0}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.25);transition:transform .25s}
+.sw:checked{background:var(--green)}
+.sw:checked::after{transform:translateX(20px)}
+input[type=range]{width:100%;accent-color:var(--blue);margin:10px 0}
+.rangecell{display:block;padding:10px 16px}
+.rangecell .l{font-size:17px}
+/* Tabbar */
+.tabbar{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--bar);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-top:.5px solid var(--sep);padding-bottom:env(safe-area-inset-bottom);z-index:20}
+.tabbar button{flex:1;background:none;border:0;color:var(--mut);font-size:10px;padding:7px 0 5px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.tabbar svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.tabbar button.on{color:var(--blue)}
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);text-align:center;padding:14px 0}
+.stats div b{display:block;font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.stats div small{color:var(--mut);font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{text-align:right;padding:11px 6px;border-bottom:.5px solid var(--sep);font-variant-numeric:tabular-nums}
+th:first-child,td:first-child{text-align:left;padding-left:16px}th:last-child,td:last-child{padding-right:16px}
+tr:last-child td{border-bottom:0}
+th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
+.runrow{display:block;padding:12px 16px}
+.runrow .t{display:flex;justify-content:space-between;align-items:baseline}
+.runrow b{font-weight:600}
+.runrow .s{color:var(--mut);font-size:14px;margin-top:2px}
 /* Run */
-#v-run{padding-bottom:calc(env(safe-area-inset-bottom) + 20px);transition:background .3s}
-#v-run[data-t=run]{background:#2a1405}
-#v-run[data-t=rest]{background:#0a1c33}
-#v-run[data-t=warm],#v-run[data-t=cool]{background:#0f2218}
-.gps{display:inline-block;padding:6px 12px;border-radius:99px;background:#1d2631;font-size:14px}
-.gps.g{color:var(--ok)}.gps.y{color:var(--warn)}.gps.r{color:var(--bad)}
-.stepname{font-size:22px;font-weight:700;text-align:center;margin-top:8px}
-.bigval{font-size:110px;font-weight:800;text-align:center;line-height:1.05;font-variant-numeric:tabular-nums;margin:10px 0}
-.bar{height:12px;background:#1d2631;border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:var(--acc)}
-#v-run[data-t=rest] .bar i{background:var(--blue)}#v-run[data-t=warm] .bar i,#v-run[data-t=cool] .bar i{background:var(--ok)}
-.pacebox{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px;text-align:center}
-.pacebox small{color:var(--mut)}.pv{font-size:44px;font-weight:700;font-variant-numeric:tabular-nums}
-.chip{text-align:center;min-height:30px;font-size:18px;font-weight:600;margin:6px 0}
-.btns3{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:10px;margin-top:16px}
+#v-run{--ac:var(--orange);padding-bottom:calc(env(safe-area-inset-bottom) + 24px)}
+#v-run[data-t=rest]{--ac:var(--blue)}
+#v-run[data-t=warm],#v-run[data-t=cool]{--ac:var(--green)}
+.gps{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:99px;background:var(--fill);font-size:13px;font-weight:500}
+.gps::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--red)}
+.gps.g::before{background:var(--green)}.gps.y::before{background:var(--yellow)}
+.iconbtn{width:44px;height:44px;border-radius:50%;border:0;background:var(--fill);color:var(--tx);display:flex;align-items:center;justify-content:center}
+.iconbtn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.topline{display:flex;align-items:center;justify-content:space-between;margin:6px 0 4px}
+.stepname{text-align:center;margin-top:6px}
+.stepname b{display:block;font-size:24px;font-weight:700;color:var(--ac)}
+.stepname span{color:var(--mut);font-size:15px}
+.ringwrap{position:relative;width:min(72vw,280px);aspect-ratio:1;margin:14px auto 8px}
+.ringwrap svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ringwrap circle{fill:none;stroke-width:16}
+.ringwrap .bg{stroke:var(--fill)}
+.ringwrap .fg{stroke:var(--ac);stroke-linecap:round;transition:stroke-dashoffset .3s linear,stroke .3s}
+.ringc{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ringc .big{font-size:68px;font-weight:700;letter-spacing:-2px;font-variant-numeric:tabular-nums;line-height:1}
+.ringc .unit{font-size:17px;color:var(--mut);margin-top:4px}
+.two{display:grid;grid-template-columns:1fr 1fr;text-align:center}
+.two>div{padding:14px 8px}
+.two>div+div{border-left:.5px solid var(--sep)}
+.two small{color:var(--mut);font-size:12px;text-transform:uppercase}
+.two b{display:block;font-size:34px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+.delta{text-align:center;min-height:26px;font-size:17px;font-weight:600;margin:10px 0 2px}
+.next{text-align:center;color:var(--mut);font-size:14px;margin:8px 0 0}
+.runbtns{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:10px;margin-top:16px}
+.runbtns .btn{padding:15px 6px}
+/* Sperrbildschirm */
+#lock{position:fixed;inset:0;z-index:100;background:#000;color:#fff;display:none;flex-direction:column;padding:calc(env(safe-area-inset-top) + 16px) 24px calc(env(safe-area-inset-bottom) + 28px);touch-action:none;--ac:#ff9f0a}
+#lock.on{display:flex}
+#lock[data-t=rest]{--ac:#0a84ff}
+#lock[data-t=warm],#lock[data-t=cool]{--ac:#30d158}
+#lock .top{display:flex;justify-content:space-between;align-items:center;color:rgba(255,255,255,.45);font-size:14px}
+#lock .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#ff453a;margin-right:6px}
+#lock .dot.g{background:#30d158}#lock .dot.y{background:#ffd60a}
+#lock .mid{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+#lock .lbl{font-size:20px;font-weight:600;color:var(--ac);opacity:.85}
+#lock .big{font-size:clamp(96px,30vw,150px);font-weight:700;letter-spacing:-4px;line-height:1;font-variant-numeric:tabular-nums;color:#e6e6e6;margin:8px 0 2px}
+#lock .unit{color:rgba(255,255,255,.4);font-size:18px}
+#lock .pace{justify-content:center;margin-top:28px;font-size:44px;font-weight:600;color:#d8d8d8;font-variant-numeric:tabular-nums;gap:10px;align-items:baseline}
+#lock .pace small{font-size:15px;color:rgba(255,255,255,.4);font-weight:400}
+#lock .dl{min-height:26px;margin-top:6px;font-size:17px;font-weight:600}
+#lock .foot3{display:flex;justify-content:center;gap:36px;color:rgba(255,255,255,.45);font-size:15px;margin-bottom:26px;font-variant-numeric:tabular-nums}
+#lock .foot3 b{color:rgba(255,255,255,.75);font-weight:600}
+.slider{position:relative;height:64px;border-radius:32px;background:rgba(255,255,255,.12);overflow:hidden;touch-action:none}
+.slider .txt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding-left:48px;font-size:19px;color:rgba(255,255,255,.55);pointer-events:none}
+.slider .txt span{background:linear-gradient(90deg,rgba(255,255,255,.35) 0%,#fff 50%,rgba(255,255,255,.35) 100%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:shim 2.4s linear infinite}
+@keyframes shim{from{background-position:200% 0}to{background-position:-200% 0}}
+.thumb{position:absolute;top:4px;left:4px;width:56px;height:56px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;touch-action:none;will-change:transform}
+.thumb svg{width:24px;height:24px;stroke:#000;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.thumb.snap{transition:transform .25s cubic-bezier(.2,.9,.3,1.1)}
 </style>
 </head>
 <body>
 
 <!-- HOME -->
 <div class="view on" id="v-home">
-  <h1>Training</h1>
+  <div class="large">Training</div>
   <div id="plans"></div>
-  <button class="btn primary" style="width:100%" onclick="newPlan()">+ Neues Training</button>
+  <button class="btn fill" onclick="newPlan()">Neues Training</button>
 </div>
 
 <!-- EDITOR -->
 <div class="view" id="v-edit">
-  <h2>Training bearbeiten</h2>
+  <div class="navbar"><button onclick="show('home')">Abbrechen</button><b>Training</b><button onclick="savePlan()">Sichern</button></div>
   <div id="edbody"></div>
-  <p class="muted" id="edsum"></p>
-  <div class="btns"><button class="btn" onclick="show('home')">Abbrechen</button><button class="btn primary" onclick="savePlan()">Speichern</button></div>
-  <div class="btns" id="eddelwrap"><button class="btn danger" onclick="delPlan()">Training löschen</button></div>
+  <p class="foot" id="edsum"></p>
+  <div id="eddelwrap" style="margin-top:22px"><button class="btn red" onclick="delPlan()">Training löschen</button></div>
 </div>
 
 <!-- RUN -->
 <div class="view" id="v-run" data-t="warm">
   <div id="runwait">
-    <h2 id="rtitle"></h2>
-    <div class="gps" id="gpsbox">GPS: suche …</div>
-    <p class="muted">Warte, bis das GPS grün ist (±15 m oder besser). Während des Laufs Bildschirm anlassen und Ton-Schalter (Klingeln) auf laut stellen.</p>
-    <button class="btn primary big" onclick="go()">Los geht's</button>
-    <button class="btn" style="width:100%;margin-top:12px" onclick="abortWait()">Abbrechen</button>
+    <div class="large" id="rtitle"></div>
+    <div class="group" style="padding:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:17px">GPS-Signal</span><span class="gps" id="gpsbox">suche …</span></div>
+      <p class="foot" style="margin:12px 0 0">Warte, bis das GPS grün ist (±15 m oder besser). Der Bildschirm bleibt während des Laufs an. Stelle den Klingel-Schalter auf laut.</p>
+    </div>
+    <div style="margin-top:22px"><button class="btn fill" style="font-size:20px;padding:18px" onclick="go()">Los geht's</button></div>
+    <div style="margin-top:10px"><button class="btn" onclick="abortWait()">Abbrechen</button></div>
   </div>
   <div id="runlive" hidden>
-    <div class="row"><span class="gps" id="rgps">GPS</span><span class="muted" id="rset"></span></div>
-    <div class="stepname" id="rstep"></div>
-    <div class="bigval" id="rrem"></div>
-    <div class="bar"><i id="rbar"></i></div>
-    <div class="pacebox">
-      <div><small>Pace aktuell</small><div class="pv" id="rpace">–:––</div></div>
-      <div><small>Ziel-Pace</small><div class="pv" id="rtarget">–</div></div>
+    <div class="topline">
+      <span class="gps" id="rgps">GPS</span>
+      <button class="iconbtn" onclick="lockNow()" aria-label="Sperren"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></button>
     </div>
-    <div class="chip" id="rdelta"></div>
-    <div class="stat card">
+    <div class="stepname"><b id="rstep"></b><span id="rsub"></span></div>
+    <div class="ringwrap">
+      <svg viewBox="0 0 260 260"><circle class="bg" cx="130" cy="130" r="112"/><circle class="fg" id="rring" cx="130" cy="130" r="112" stroke-dasharray="703.7" stroke-dashoffset="703.7"/></svg>
+      <div class="ringc"><div class="big" id="rrem"></div><div class="unit" id="runit"></div></div>
+    </div>
+    <div class="group two">
+      <div><small>Pace aktuell</small><b id="rpace">–:––</b></div>
+      <div><small>Ziel-Pace</small><b id="rtarget">–</b></div>
+    </div>
+    <div class="delta" id="rdelta"></div>
+    <div class="group stats">
       <div><b id="rtime">0:00</b><small>Zeit</small></div>
-      <div><b id="rdist">0.00</b><small>km gesamt</small></div>
+      <div><b id="rdist">0,00</b><small>km gesamt</small></div>
       <div><b id="rcount">–</b><small>Intervall</small></div>
     </div>
-    <div class="muted" id="rnext" style="text-align:center"></div>
-    <div class="btns3">
+    <div class="next" id="rnext"></div>
+    <div class="runbtns">
       <button class="btn" id="rpause" onclick="togglePause()">Pause</button>
-      <button class="btn" onclick="skipStep()">Weiter ⏭</button>
-      <button class="btn danger" onclick="endEarly()">Ende</button>
+      <button class="btn" onclick="skipStep()">Weiter</button>
+      <button class="btn red" onclick="endEarly()">Ende</button>
     </div>
+  </div>
+</div>
+
+<!-- SPERRBILDSCHIRM -->
+<div id="lock" data-t="run">
+  <div class="top"><span><i class="dot" id="lgps"></i>Gesperrt</span><span id="lcount"></span></div>
+  <div class="mid">
+    <div class="lbl" id="lstep"></div>
+    <div class="big" id="lrem"></div>
+    <div class="unit" id="lunit"></div>
+    <div class="pace" style="display:flex"><span id="lpace">–:––</span><small id="ltarget"></small></div>
+    <div class="dl" id="ldelta"></div>
+  </div>
+  <div class="foot3"><span><b id="ltime">0:00</b> Zeit</span><span><b id="ldist">0,00</b> km</span></div>
+  <div class="slider" id="slider">
+    <div class="txt"><span>Zum Entsperren schieben</span></div>
+    <div class="thumb" id="thumb"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
   </div>
 </div>
 
 <!-- HISTORY -->
 <div class="view" id="v-hist">
-  <h1>Verlauf</h1>
+  <div class="large">Verlauf</div>
   <div id="histlist"></div>
-  <button class="btn" style="width:100%" onclick="exportHist()">Verlauf exportieren (JSON)</button>
+  <div style="margin-top:18px"><button class="btn" onclick="exportHist()">Verlauf exportieren</button></div>
 </div>
 
 <!-- DETAIL -->
 <div class="view" id="v-detail">
+  <div class="navbar"><button onclick="show('hist')">‹ Verlauf</button><b>Lauf</b><button class="link red" style="color:var(--red)" onclick="delRun()">Löschen</button></div>
   <div id="detail"></div>
-  <div class="btns"><button class="btn" onclick="show('hist')">Zurück</button><button class="btn danger" onclick="delRun()">Löschen</button></div>
 </div>
 
 <!-- SETTINGS -->
 <div class="view" id="v-set">
-  <h1>Einstellungen</h1>
-  <div class="card">
-    <label class="sw">Signalton<input type="checkbox" id="s-beep" onchange="settings.beep=this.checked;saveSettings()"></label>
-    <label class="sw">Sprachansagen<input type="checkbox" id="s-voice" onchange="settings.voice=this.checked;saveSettings()"></label>
-    <label class="sw">Pace-Hinweise per Sprache<input type="checkbox" id="s-hints" onchange="settings.hints=this.checked;saveSettings()"></label>
+  <div class="large">Einstellungen</div>
+  <div class="head">Ansagen</div>
+  <div class="group">
+    <label class="cell"><span class="l">Signalton</span><input class="sw" type="checkbox" id="s-beep" onchange="settings.beep=this.checked;saveSettings()"></label>
+    <label class="cell"><span class="l">Sprachansagen</span><input class="sw" type="checkbox" id="s-voice" onchange="settings.voice=this.checked;saveSettings()"></label>
+    <label class="cell"><span class="l">Pace-Hinweise</span><input class="sw" type="checkbox" id="s-hints" onchange="settings.hints=this.checked;saveSettings()"></label>
   </div>
-  <div class="card">
-    <label style="margin-top:0">Lautstärke<input type="range" id="s-vol" min="0.1" max="1" step="0.1" oninput="settings.volume=+this.value;saveSettings()"></label>
-    <label>Sprechtempo<input type="range" id="s-rate" min="0.7" max="1.3" step="0.1" oninput="settings.rate=+this.value;saveSettings()"></label>
-    <label>Distanz-Korrektur in % (GPS misst oft etwas zu lang → negativer Wert, z. B. -1)<input type="number" inputmode="decimal" id="s-corr" step="0.5" oninput="settings.corr=parseFloat(this.value)||0;saveSettings()"></label>
+  <div class="head">Tastensperre</div>
+  <div class="group">
+    <label class="cell"><span class="l">Gesperrt starten</span><input class="sw" type="checkbox" id="s-startlock" onchange="settings.startLocked=this.checked;saveSettings()"></label>
+    <label class="cell"><span class="l">Automatisch sperren</span><input class="sw" type="checkbox" id="s-autolock" onchange="settings.autoLock=this.checked;saveSettings()"></label>
   </div>
-  <button class="btn primary" style="width:100%" onclick="testAudio()">Ton &amp; Sprache testen</button>
-  <p class="muted">Tipp: Über Safari „Teilen → Zum Home-Bildschirm" installieren und von dort starten. Training und Verlauf werden nur auf diesem Gerät gespeichert.</p>
+  <p class="foot">Die Sperre schützt nur die App. Nach 10 Sekunden ohne Berührung sperrt sie sich automatisch. Entsperren per Schieberegler.</p>
+  <div class="head">Ton</div>
+  <div class="group">
+    <label class="cell rangecell"><span class="l">Lautstärke</span><input type="range" id="s-vol" min="0.1" max="1" step="0.1" oninput="settings.volume=+this.value;saveSettings()"></label>
+    <label class="cell rangecell"><span class="l">Sprechtempo</span><input type="range" id="s-rate" min="0.7" max="1.3" step="0.1" oninput="settings.rate=+this.value;saveSettings()"></label>
+  </div>
+  <div class="head">GPS</div>
+  <div class="group">
+    <label class="cell"><span class="l">Distanz-Korrektur (%)</span><input type="number" inputmode="decimal" id="s-corr" step="0.5" oninput="settings.corr=parseFloat(this.value)||0;saveSettings()"></label>
+  </div>
+  <p class="foot">GPS misst oft etwas zu lang. Ein negativer Wert (z. B. −1) korrigiert das.</p>
+  <div style="margin-top:22px"><button class="btn fill" onclick="testAudio()">Ton &amp; Sprache testen</button></div>
+  <p class="foot" style="margin-top:14px">Tipp: In Safari „Teilen → Zum Home-Bildschirm“ wählen und die App von dort starten. Trainings und Verlauf werden nur auf diesem Gerät gespeichert.</p>
 </div>
 
 <div class="tabbar" id="tabbar">
-  <button data-v="home" onclick="show('home')"><b>🏃</b>Training</button>
-  <button data-v="hist" onclick="show('hist')"><b>📈</b>Verlauf</button>
-  <button data-v="set" onclick="show('set')"><b>⚙️</b>Einstellungen</button>
+  <button data-v="home" onclick="show('home')"><svg viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 1.5M10 3h4"/></svg>Training</button>
+  <button data-v="hist" onclick="show('hist')"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.5M4 4v4.5h4.5M12 7.5V12l3 2"/></svg>Verlauf</button>
+  <button data-v="set" onclick="show('set')"><svg viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>Einstellungen</button>
 </div>
 
 <script>
@@ -170,14 +286,15 @@ const num=v=>parseInt(v)||0;
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 function fmtTime(sec){sec=Math.max(0,Math.round(sec));const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`}
 function fmtPace(p){if(!p||!isFinite(p)||p>1800)return '–:––';let m=Math.floor(p/60),s=Math.round(p%60);if(s===60){m++;s=0}return `${m}:${String(s).padStart(2,'0')}`}
-function fmtDist(m){return m<1000?`${Math.round(m)} m`:`${(m/1000).toFixed(2)} km`}
+function fmtDist(m){return m<1000?`${Math.round(m)} m`:`${(m/1000).toFixed(2).replace('.',',')} km`}
+function km2(m){return (m/1000).toFixed(2).replace('.',',')}
 function fmtDate(iso){return new Date(iso).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}
 
 /* ---------- Daten ---------- */
 function defaultPlan(){return {id:'p'+Date.now(),name:'5 × 1000 m',warm:10,cool:5,sets:[{reps:5,dist:1000,pace:240,rest:120}]}}
 let plans=LS.get('iv_plans',null)||[defaultPlan()];
 let history=LS.get('iv_hist',[]);
-let settings=Object.assign({beep:true,voice:true,hints:true,volume:0.8,rate:1,corr:0},LS.get('iv_settings',{}));
+let settings=Object.assign({beep:true,voice:true,hints:true,volume:0.8,rate:1,corr:0,startLocked:true,autoLock:true},LS.get('iv_settings',{}));
 const savePlans=()=>LS.set('iv_plans',plans);
 const saveHist=()=>LS.set('iv_hist',history);
 function saveSettings(){LS.set('iv_settings',settings)}
@@ -214,8 +331,8 @@ function show(v){
 
 /* ---------- Home ---------- */
 function renderHome(){
-  $('#plans').innerHTML=plans.map(p=>`<div class="card"><h3>${esc(p.name)}</h3><div class="muted">${summ(p)}</div>
-  <div class="btns"><button class="btn primary" onclick="startRun('${p.id}')">Start</button><button class="btn" onclick="editPlan('${p.id}')">Bearbeiten</button></div></div>`).join('')||'<p class="muted">Noch kein Training angelegt.</p>';
+  $('#plans').innerHTML=plans.map(p=>`<div class="group plan"><h3>${esc(p.name)}</h3><div class="sub">${summ(p)}</div>
+  <div class="btnrow"><button class="btn fill" onclick="startRun('${p.id}')">Start</button><button class="btn" onclick="editPlan('${p.id}')">Bearbeiten</button></div></div>`).join('')||'<p class="foot">Noch kein Training angelegt.</p>';
 }
 
 /* ---------- Editor ---------- */
@@ -225,18 +342,20 @@ function editPlan(id){ed=JSON.parse(JSON.stringify(plans.find(p=>p.id===id)));ed
 function renderEd(){
   $('#eddelwrap').hidden=edNew;
   $('#edbody').innerHTML=`
-  <label>Name<input type="text" value="${esc(ed.name)}" oninput="ed.name=this.value"></label>
-  <label>Warm-up (Minuten, 0 = keins)<input type="number" inputmode="numeric" min="0" value="${ed.warm}" oninput="ed.warm=num(this.value);edSum()"></label>
-  ${ed.sets.map((s,i)=>`<div class="card" style="margin-top:14px">
-    <div class="row"><b>Satz ${i+1}</b>${ed.sets.length>1?`<button class="link" onclick="rmSet(${i})">Entfernen</button>`:''}</div>
-    <div class="grid2">
-      <label>Wiederholungen<input type="number" inputmode="numeric" min="1" value="${s.reps}" oninput="ed.sets[${i}].reps=Math.max(1,num(this.value));edSum()"></label>
-      <label>Distanz (m)<input type="number" inputmode="numeric" min="50" step="50" value="${s.dist}" oninput="ed.sets[${i}].dist=Math.max(50,num(this.value));edSum()"></label>
-      <label>Pace (min/km)<div class="paceinp"><input type="number" inputmode="numeric" min="1" value="${Math.floor(s.pace/60)}" oninput="setPace(${i},'m',this.value)">:<input type="number" inputmode="numeric" min="0" max="59" value="${String(s.pace%60).padStart(2,'0')}" oninput="setPace(${i},'s',this.value)"></div></label>
-      <label>Pause danach (Sek.)<input type="number" inputmode="numeric" min="0" value="${s.rest}" oninput="ed.sets[${i}].rest=num(this.value);edSum()"></label>
-    </div></div>`).join('')}
-  <button class="btn" style="width:100%" onclick="addSet()">+ Weiteren Satz hinzufügen</button>
-  <label>Cool-down (Minuten, 0 = keins)<input type="number" inputmode="numeric" min="0" value="${ed.cool}" oninput="ed.cool=num(this.value);edSum()"></label>`;
+  <div class="group"><label class="cell"><span class="l">Name</span><input type="text" value="${esc(ed.name)}" oninput="ed.name=this.value"></label></div>
+  <div class="head">Aufwärmen</div>
+  <div class="group"><label class="cell"><span class="l">Warm-up (Minuten)</span><input type="number" inputmode="numeric" min="0" value="${ed.warm}" oninput="ed.warm=num(this.value);edSum()"></label></div>
+  ${ed.sets.map((s,i)=>`
+  <div class="head" style="display:flex;justify-content:space-between;align-items:center"><span>Satz ${i+1}</span>${ed.sets.length>1?`<button class="link red" onclick="rmSet(${i})">Entfernen</button>`:''}</div>
+  <div class="group">
+    <label class="cell"><span class="l">Wiederholungen</span><input type="number" inputmode="numeric" min="1" value="${s.reps}" oninput="ed.sets[${i}].reps=Math.max(1,num(this.value));edSum()"></label>
+    <label class="cell"><span class="l">Distanz (m)</span><input type="number" inputmode="numeric" min="50" step="50" value="${s.dist}" oninput="ed.sets[${i}].dist=Math.max(50,num(this.value));edSum()"></label>
+    <div class="cell"><span class="l">Pace (min/km)</span><span class="pace"><input type="number" inputmode="numeric" min="1" value="${Math.floor(s.pace/60)}" oninput="setPace(${i},'m',this.value)">:<input type="number" inputmode="numeric" min="0" max="59" value="${String(s.pace%60).padStart(2,'0')}" oninput="setPace(${i},'s',this.value)"></span></div>
+    <label class="cell"><span class="l">Pause danach (Sek.)</span><input type="number" inputmode="numeric" min="0" value="${s.rest}" oninput="ed.sets[${i}].rest=num(this.value);edSum()"></label>
+  </div>`).join('')}
+  <div style="margin-top:14px"><button class="btn" onclick="addSet()">Weiteren Satz hinzufügen</button></div>
+  <div class="head">Abwärmen</div>
+  <div class="group"><label class="cell"><span class="l">Cool-down (Minuten)</span><input type="number" inputmode="numeric" min="0" value="${ed.cool}" oninput="ed.cool=num(this.value);edSum()"></label></div>`;
   edSum();
 }
 function edSum(){$('#edsum').textContent=summ(ed)+' (nach dem letzten Intervall entfällt die Pause)'}
@@ -282,6 +401,33 @@ async function requestWake(){try{if('wakeLock' in navigator&&R){R.wl=await navig
 function releaseWake(){try{if(R&&R.wl){R.wl.release();R.wl=null}}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&R&&R.state==='run')requestWake()});
 
+/* ---------- Tastensperre ---------- */
+const slider=$('#slider'),thumb=$('#thumb');
+let drag=null;
+function setLocked(on){
+  if(!R&&on)return;
+  if(R)R.locked=on;
+  $('#lock').classList.toggle('on',on);
+  resetThumb(true);
+  if(R)R.lastTouch=performance.now();
+}
+function lockNow(){if(R&&R.state==='run'){setLocked(true);paint()}}
+function maxX(){return slider.clientWidth-thumb.clientWidth-8}
+function setX(x){thumb.style.transform=`translateX(${x}px)`;slider.querySelector('.txt').style.opacity=Math.max(0,1-x/(maxX()*0.6))}
+function resetThumb(instant){thumb.classList.toggle('snap',!instant);setX(0)}
+thumb.addEventListener('pointerdown',e=>{drag={sx:e.clientX};thumb.classList.remove('snap');try{thumb.setPointerCapture(e.pointerId)}catch(_){}});
+thumb.addEventListener('pointermove',e=>{if(!drag)return;setX(Math.max(0,Math.min(maxX(),e.clientX-drag.sx)))});
+function endDrag(e){
+  if(!drag)return;
+  const x=Math.max(0,Math.min(maxX(),e.clientX-drag.sx));drag=null;
+  if(x>=maxX()*0.92){setLocked(false);paint()}else resetThumb(false);
+}
+thumb.addEventListener('pointerup',endDrag);
+thumb.addEventListener('pointercancel',()=>{drag=null;resetThumb(false)});
+// Berührungen während der Sperre abfangen (kein Scrollen / Durchklicken)
+$('#lock').addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
+document.addEventListener('pointerdown',()=>{if(R)R.lastTouch=performance.now()},true);
+
 /* ---------- Lauf-Engine ---------- */
 let R=null;
 function hav(a,b){const r=Math.PI/180,R6=6371000,dLa=(b.lat-a.lat)*r,dLo=(b.lon-a.lon)*r;
@@ -290,7 +436,7 @@ function hav(a,b){const r=Math.PI/180,R6=6371000,dLa=(b.lat-a.lat)*r,dLo=(b.lon-
 function startRun(id){
   const plan=plans.find(p=>p.id===id);if(!plan)return;
   if(!('geolocation' in navigator)){alert('Dieses Gerät bietet kein GPS im Browser.');return}
-  R={plan,steps:buildSteps(plan),state:'wait',i:0,stepTime:0,stepDist:0,total:0,totalDist:0,paused:false,last:performance.now(),lastPt:null,win:[],log:[],started:new Date().toISOString(),acc:null,flags:{},err:null};
+  R={plan,steps:buildSteps(plan),state:'wait',i:0,stepTime:0,stepDist:0,total:0,totalDist:0,paused:false,locked:false,lastTouch:performance.now(),last:performance.now(),lastPt:null,win:[],log:[],started:new Date().toISOString(),acc:null,flags:{},err:null};
   $('#rtitle').textContent=plan.name;$('#runwait').hidden=false;$('#runlive').hidden=true;
   show('run');paintGps();
   R.watch=navigator.geolocation.watchPosition(onPos,onPosErr,{enableHighAccuracy:true,maximumAge:0,timeout:20000});
@@ -298,7 +444,7 @@ function startRun(id){
 function abortWait(){stopSensors();R=null;show('home')}
 function stopSensors(){if(!R)return;clearInterval(R.timer);try{navigator.geolocation.clearWatch(R.watch)}catch(e){}releaseWake()}
 
-function onPosErr(e){R.err=e.code===1?'Standort verweigert – in iOS: Einstellungen → Datenschutz → Ortungsdienste → Safari/Intervall':'GPS-Fehler';paintGps()}
+function onPosErr(e){if(!R)return;R.err=e.code===1?'Standort verweigert':'GPS-Fehler';paintGps()}
 function onPos(p){
   if(!R)return;R.err=null;
   const c=p.coords;R.acc=c.accuracy;paintGps();
@@ -319,10 +465,11 @@ function onPos(p){
 }
 function paintGps(){
   if(!R)return;
-  let cls='r',txt='GPS: suche …';
+  let cls='',txt='suche …';
   if(R.err){txt=R.err}
-  else if(R.acc!=null){cls=R.acc<=15?'g':R.acc<=30?'y':'r';txt=`GPS ±${Math.round(R.acc)} m`}
+  else if(R.acc!=null){cls=R.acc<=15?'g':R.acc<=30?'y':'';txt=`GPS ±${Math.round(R.acc)} m`}
   ['#gpsbox','#rgps'].forEach(s=>{const e=$(s);e.className='gps '+cls;e.textContent=txt});
+  $('#lgps').className='dot '+cls;
 }
 function curPace(){
   const w=R.win;if(w.length<2)return null;
@@ -332,9 +479,10 @@ function curPace(){
 }
 
 function go(){
-  unlockAudio();R.state='run';R.last=performance.now();
+  unlockAudio();R.state='run';R.last=performance.now();R.lastTouch=performance.now();
   $('#runwait').hidden=true;$('#runlive').hidden=false;
   requestWake();enterStep(0);R.timer=setInterval(tick,250);
+  if(settings.startLocked)setLocked(true);
 }
 function enterStep(i){
   R.i=i;R.stepTime=0;R.stepDist=0;R.flags={};
@@ -361,6 +509,7 @@ function endEarly(){if(confirm('Training beenden und speichern?'))finish(true)}
 function tick(){
   if(!R||R.state!=='run')return;
   const now=performance.now(),dt=(now-R.last)/1000;R.last=now;
+  if(settings.autoLock&&!R.locked&&!R.paused&&now-R.lastTouch>10000)setLocked(true);
   if(R.paused){paint();return}
   R.stepTime+=dt;R.total+=dt;
   const s=R.steps[R.i];
@@ -383,31 +532,47 @@ function tick(){
   paint();
 }
 
+const RING=703.7;
 function paint(){
-  const s=R.steps[R.i],v=$('#v-run');v.dataset.t=s.type;
-  $('#rstep').textContent=s.label+(s.type==='run'?` · ${fmtDist(s.dist)}`:'')+(R.paused?' · PAUSIERT':'');
-  let frac;
-  if(s.type==='run'){$('#rrem').textContent=Math.ceil(Math.max(0,s.dist-R.stepDist))+' m';frac=R.stepDist/s.dist}
-  else{$('#rrem').textContent=fmtTime(Math.ceil(Math.max(0,s.dur-R.stepTime)));frac=R.stepTime/s.dur}
-  $('#rbar').style.width=Math.min(100,Math.max(0,frac*100))+'%';
-  const p=curPace();$('#rpace').textContent=fmtPace(p);
-  $('#rtarget').textContent=s.type==='run'?fmtPace(s.pace):'–';
-  const dl=$('#rdelta');
+  const s=R.steps[R.i];
+  $('#v-run').dataset.t=s.type;$('#lock').dataset.t=s.type;
+  const p=curPace();
+  let remTxt,unit,frac;
+  if(s.type==='run'){remTxt=String(Math.ceil(Math.max(0,s.dist-R.stepDist)));unit='Meter';frac=R.stepDist/s.dist}
+  else{remTxt=fmtTime(Math.ceil(Math.max(0,s.dur-R.stepTime)));unit='verbleibend';frac=R.stepTime/s.dur}
+  frac=Math.min(1,Math.max(0,frac));
+  const sub=(s.type==='run'?fmtDist(s.dist)+' @ '+fmtPace(s.pace)+'/km':'')+(R.paused?' · Pausiert':'');
+  let dtxt='',dcol='';
   if(s.type==='run'&&p){const d=Math.round(p-s.pace),a=Math.abs(d);
-    if(a<=5){dl.textContent='✓ im Ziel';dl.style.color='var(--ok)'}
-    else if(d>0){dl.textContent=`${a} s/km zu langsam`;dl.style.color=a>15?'var(--bad)':'var(--warn)'}
-    else{dl.textContent=`${a} s/km zu schnell`;dl.style.color=a>15?'var(--bad)':'var(--warn)'}
-  }else{dl.textContent='';}
-  $('#rtime').textContent=fmtTime(R.total);
-  $('#rdist').textContent=(R.totalDist/1000).toFixed(2);
-  $('#rcount').textContent=s.type==='run'?`${s.n}/${s.total}`:'–';
+    if(a<=5){dtxt='Im Ziel';dcol='var(--green)'}
+    else if(d>0){dtxt=`${a} s/km zu langsam`;dcol=a>15?'var(--red)':'var(--orange)'}
+    else{dtxt=`${a} s/km zu schnell`;dcol=a>15?'var(--red)':'var(--orange)'}}
   const nx=R.steps[R.i+1];
-  $('#rnext').textContent=nx?('Danach: '+(nx.type==='run'?`${nx.label} · ${fmtDist(nx.dist)} @ ${fmtPace(nx.pace)}`:nx.type==='rest'?`Pause ${fmtTime(nx.dur)}`:nx.label)):'Letzter Abschnitt';
+  const cnt=s.type==='run'?`${s.n}/${s.total}`:'–';
+  if(!R.locked){
+    $('#rstep').textContent=s.label;$('#rsub').textContent=sub;
+    $('#rrem').textContent=remTxt;$('#runit').textContent=unit;
+    $('#rring').style.strokeDashoffset=RING*(1-frac);
+    $('#rpace').textContent=fmtPace(p);
+    $('#rtarget').textContent=s.type==='run'?fmtPace(s.pace):'–';
+    const dl=$('#rdelta');dl.textContent=dtxt;dl.style.color=dcol;
+    $('#rtime').textContent=fmtTime(R.total);
+    $('#rdist').textContent=km2(R.totalDist);
+    $('#rcount').textContent=cnt;
+    $('#rnext').textContent=nx?('Danach: '+(nx.type==='run'?`${nx.label} · ${fmtDist(nx.dist)} @ ${fmtPace(nx.pace)}`:nx.type==='rest'?`Pause ${fmtTime(nx.dur)}`:nx.label)):'Letzter Abschnitt';
+  }else{
+    $('#lstep').textContent=s.label;$('#lcount').textContent=s.type==='run'?cnt:'';
+    $('#lrem').textContent=remTxt;$('#lunit').textContent=unit;
+    $('#lpace').textContent=s.type==='run'?fmtPace(p):'';
+    $('#ltarget').textContent=s.type==='run'?'Ziel '+fmtPace(s.pace):'';
+    const d=$('#ldelta');d.textContent=dtxt;d.style.color=dcol;
+    $('#ltime').textContent=fmtTime(R.total);$('#ldist').textContent=km2(R.totalDist);
+  }
 }
 
 function finish(early){
   if(early&&R.stepTime>3)logStep();
-  stopSensors();R.state='done';
+  stopSensors();R.state='done';setLocked(false);
   speak(`Training beendet. ${(R.totalDist/1000).toFixed(2).replace('.',' Komma ')} Kilometer.`);beep(1320,0.5);
   let id=null;
   if(R.total>=10){
@@ -422,19 +587,20 @@ function finish(early){
 /* ---------- Verlauf ---------- */
 function renderHist(){
   const h=history.slice().reverse();
-  $('#histlist').innerHTML=h.length?h.map(r=>`<div class="card tap" onclick="showRun('${r.id}')"><div class="row"><b>${esc(r.name)}</b><span class="muted">${fmtDate(r.date)}</span></div>
-  <div class="muted">${(r.dist/1000).toFixed(2)} km · ${fmtTime(r.time)} · Ø ${fmtPace(r.pace)}/km</div></div>`).join(''):'<p class="muted">Noch keine Läufe gespeichert.</p>';
+  $('#histlist').innerHTML=h.length?`<div class="group">${h.map(r=>`<div class="cell runrow" onclick="showRun('${r.id}')" style="display:block"><div class="t"><b>${esc(r.name)}</b><span class="s" style="margin:0">${fmtDate(r.date)}</span></div>
+  <div class="s">${km2(r.dist)} km · ${fmtTime(r.time)} · Ø ${fmtPace(r.pace)}/km</div></div>`).join('')}</div>`:'<p class="foot">Noch keine Läufe gespeichert.</p>';
 }
 let curRun=null;
 function showRun(id){
   const r=history.find(x=>x.id===id);if(!r)return;curRun=id;
   const rows=r.log.map(l=>{
     const pace=l.dist>30?l.time/l.dist*1000:0;
-    let col='';if(l.target&&pace){const d=pace-l.target;col=Math.abs(d)<=5?'var(--ok)':Math.abs(d)<=15?'var(--warn)':'var(--bad)'}
-    return `<tr><td>${esc(l.label)}</td><td>${Math.round(l.dist)} m</td><td>${fmtTime(l.time)}</td><td style="color:${col}">${fmtPace(pace)}${l.target?` <span class="muted">/ ${fmtPace(l.target)}</span>`:''}</td></tr>`}).join('');
-  $('#detail').innerHTML=`<h2>${esc(r.name)}</h2><div class="muted" style="margin-bottom:12px">${fmtDate(r.date)}</div>
-  <div class="stat card"><div><b>${(r.dist/1000).toFixed(2)}</b><small>km</small></div><div><b>${fmtTime(r.time)}</b><small>Zeit</small></div><div><b>${fmtPace(r.pace)}</b><small>Ø min/km</small></div></div>
-  <div class="card"><table><tr><th>Abschnitt</th><th>Dist.</th><th>Zeit</th><th>Pace / Ziel</th></tr>${rows}</table></div>`;
+    let col='';if(l.target&&pace){const d=pace-l.target;col=Math.abs(d)<=5?'var(--green)':Math.abs(d)<=15?'var(--orange)':'var(--red)'}
+    return `<tr><td>${esc(l.label)}</td><td>${Math.round(l.dist)} m</td><td>${fmtTime(l.time)}</td><td style="color:${col}">${fmtPace(pace)}${l.target?` <span style="color:var(--mut)">/ ${fmtPace(l.target)}</span>`:''}</td></tr>`}).join('');
+  $('#detail').innerHTML=`<div class="large" style="margin-top:4px">${esc(r.name)}</div><p class="foot" style="margin:-8px 4px 14px">${fmtDate(r.date)}</p>
+  <div class="group stats"><div><b>${km2(r.dist)}</b><small>km</small></div><div><b>${fmtTime(r.time)}</b><small>Zeit</small></div><div><b>${fmtPace(r.pace)}</b><small>Ø min/km</small></div></div>
+  <div class="head">Abschnitte</div>
+  <div class="group"><table><tr><th>Abschnitt</th><th>Dist.</th><th>Zeit</th><th>Pace</th></tr>${rows}</table></div>`;
   show('detail');
 }
 function delRun(){if(confirm('Diesen Lauf löschen?')){history=history.filter(x=>x.id!==curRun);saveHist();show('hist')}}
@@ -447,6 +613,7 @@ async function exportHist(){
 /* ---------- Init ---------- */
 (function(){
   $('#s-beep').checked=settings.beep;$('#s-voice').checked=settings.voice;$('#s-hints').checked=settings.hints;
+  $('#s-startlock').checked=settings.startLocked;$('#s-autolock').checked=settings.autoLock;
   $('#s-vol').value=settings.volume;$('#s-rate').value=settings.rate;$('#s-corr').value=settings.corr;
   try{speechSynthesis.getVoices()}catch(e){}
   savePlans();show('home');

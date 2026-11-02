@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Intervall">
+<meta name="theme-color" content="#0b0f14">
+<link rel="apple-touch-icon" id="icon">
+<title>Intervall-Lauf</title>
+<script>
+// App-Icon zur Laufzeit erzeugen (für "Zum Home-Bildschirm")
+(function(){
+  var c=document.createElement('canvas');c.width=c.height=180;var x=c.getContext('2d');
+  x.fillStyle='#0b0f14';x.fillRect(0,0,180,180);
+  x.strokeStyle='#ff7a1a';x.lineWidth=14;x.beginPath();x.arc(90,98,58,0,Math.PI*2);x.stroke();
+  x.fillStyle='#ff7a1a';x.fillRect(78,14,24,16);
+  x.fillStyle='#e8edf2';x.font='bold 54px -apple-system,Helvetica,Arial';x.textAlign='center';x.textBaseline='middle';x.fillText('IV',90,100);
+  document.getElementById('icon').href=c.toDataURL('image/png');
+})();
+</script>
+<style>
+:root{--bg:#0b0f14;--card:#151b23;--line:#243040;--tx:#e8edf2;--mut:#8a98a8;--acc:#ff7a1a;--ok:#2ecc71;--warn:#f5b301;--bad:#ff4d4d;--blue:#3b82f6}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif}
+.view{display:none;min-height:100dvh;padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 96px)}
+.view.on{display:block}
+h1{font-size:28px;margin:6px 0 14px}h2{font-size:20px;margin:4px 0 10px}h3{margin:0 0 4px;font-size:18px}
+.muted{color:var(--mut);font-size:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.card.tap:active{background:#1b2430}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.btns{display:flex;gap:10px;margin-top:12px}
+.btn{flex:1;border:1px solid var(--line);background:#1d2631;color:var(--tx);font-size:17px;padding:14px;border-radius:14px;font-weight:600}
+.btn.primary{background:var(--acc);border-color:var(--acc);color:#111}
+.btn.danger{color:var(--bad)}
+.btn.big{font-size:22px;padding:20px;width:100%;margin-top:14px}
+.btn:active{opacity:.8}
+.link{background:none;border:0;color:var(--acc);font-size:15px;padding:6px}
+label{display:block;font-size:13px;color:var(--mut);margin:10px 0 0}
+input[type=text],input[type=number],input:not([type]){width:100%;margin-top:4px;background:#0f141b;border:1px solid var(--line);border-radius:10px;color:var(--tx);font-size:18px;padding:10px 12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.paceinp{display:flex;align-items:center;gap:6px}.paceinp input{text-align:center}
+.tabbar{position:fixed;left:0;right:0;bottom:0;display:flex;background:rgba(15,20,27,.96);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);backdrop-filter:blur(10px)}
+.tabbar button{flex:1;background:none;border:0;color:var(--mut);font-size:13px;padding:10px 0 8px}
+.tabbar button b{display:block;font-size:22px;margin-bottom:2px}
+.tabbar button.on{color:var(--acc)}
+.sw{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:17px;color:var(--tx);margin:0}
+.sw:last-child{border:0}
+.sw input[type=checkbox]{width:26px;height:26px;accent-color:var(--acc)}
+input[type=range]{width:100%;accent-color:var(--acc)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:right;padding:8px 4px;border-bottom:1px solid var(--line)}th:first-child,td:first-child{text-align:left}
+th{color:var(--mut);font-weight:500}
+.stat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.stat div b{display:block;font-size:20px}
+.stat div small{color:var(--mut)}
+/* Run */
+#v-run{padding-bottom:calc(env(safe-area-inset-bottom) + 20px);transition:background .3s}
+#v-run[data-t=run]{background:#2a1405}
+#v-run[data-t=rest]{background:#0a1c33}
+#v-run[data-t=warm],#v-run[data-t=cool]{background:#0f2218}
+.gps{display:inline-block;padding:6px 12px;border-radius:99px;background:#1d2631;font-size:14px}
+.gps.g{color:var(--ok)}.gps.y{color:var(--warn)}.gps.r{color:var(--bad)}
+.stepname{font-size:22px;font-weight:700;text-align:center;margin-top:8px}
+.bigval{font-size:110px;font-weight:800;text-align:center;line-height:1.05;font-variant-numeric:tabular-nums;margin:10px 0}
+.bar{height:12px;background:#1d2631;border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:var(--acc)}
+#v-run[data-t=rest] .bar i{background:var(--blue)}#v-run[data-t=warm] .bar i,#v-run[data-t=cool] .bar i{background:var(--ok)}
+.pacebox{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px;text-align:center}
+.pacebox small{color:var(--mut)}.pv{font-size:44px;font-weight:700;font-variant-numeric:tabular-nums}
+.chip{text-align:center;min-height:30px;font-size:18px;font-weight:600;margin:6px 0}
+.btns3{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:10px;margin-top:16px}
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div class="view on" id="v-home">
+  <h1>Training</h1>
+  <div id="plans"></div>
+  <button class="btn primary" style="width:100%" onclick="newPlan()">+ Neues Training</button>
+</div>
+
+<!-- EDITOR -->
+<div class="view" id="v-edit">
+  <h2>Training bearbeiten</h2>
+  <div id="edbody"></div>
+  <p class="muted" id="edsum"></p>
+  <div class="btns"><button class="btn" onclick="show('home')">Abbrechen</button><button class="btn primary" onclick="savePlan()">Speichern</button></div>
+  <div class="btns" id="eddelwrap"><button class="btn danger" onclick="delPlan()">Training löschen</button></div>
+</div>
+
+<!-- RUN -->
+<div class="view" id="v-run" data-t="warm">
+  <div id="runwait">
+    <h2 id="rtitle"></h2>
+    <div class="gps" id="gpsbox">GPS: suche …</div>
+    <p class="muted">Warte, bis das GPS grün ist (±15 m oder besser). Während des Laufs Bildschirm anlassen und Ton-Schalter (Klingeln) auf laut stellen.</p>
+    <button class="btn primary big" onclick="go()">Los geht's</button>
+    <button class="btn" style="width:100%;margin-top:12px" onclick="abortWait()">Abbrechen</button>
+  </div>
+  <div id="runlive" hidden>
+    <div class="row"><span class="gps" id="rgps">GPS</span><span class="muted" id="rset"></span></div>
+    <div class="stepname" id="rstep"></div>
+    <div class="bigval" id="rrem"></div>
+    <div class="bar"><i id="rbar"></i></div>
+    <div class="pacebox">
+      <div><small>Pace aktuell</small><div class="pv" id="rpace">–:––</div></div>
+      <div><small>Ziel-Pace</small><div class="pv" id="rtarget">–</div></div>
+    </div>
+    <div class="chip" id="rdelta"></div>
+    <div class="stat card">
+      <div><b id="rtime">0:00</b><small>Zeit</small></div>
+      <div><b id="rdist">0.00</b><small>km gesamt</small></div>
+      <div><b id="rcount">–</b><small>Intervall</small></div>
+    </div>
+    <div class="muted" id="rnext" style="text-align:center"></div>
+    <div class="btns3">
+      <button class="btn" id="rpause" onclick="togglePause()">Pause</button>
+      <button class="btn" onclick="skipStep()">Weiter ⏭</button>
+      <button class="btn danger" onclick="endEarly()">Ende</button>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div class="view" id="v-hist">
+  <h1>Verlauf</h1>
+  <div id="histlist"></div>
+  <button class="btn" style="width:100%" onclick="exportHist()">Verlauf exportieren (JSON)</button>
+</div>
+
+<!-- DETAIL -->
+<div class="view" id="v-detail">
+  <div id="detail"></div>
+  <div class="btns"><button class="btn" onclick="show('hist')">Zurück</button><button class="btn danger" onclick="delRun()">Löschen</button></div>
+</div>
+
+<!-- SETTINGS -->
+<div class="view" id="v-set">
+  <h1>Einstellungen</h1>
+  <div class="card">
+    <label class="sw">Signalton<input type="checkbox" id="s-beep" onchange="settings.beep=this.checked;saveSettings()"></label>
+    <label class="sw">Sprachansagen<input type="checkbox" id="s-voice" onchange="settings.voice=this.checked;saveSettings()"></label>
+    <label class="sw">Pace-Hinweise per Sprache<input type="checkbox" id="s-hints" onchange="settings.hints=this.checked;saveSettings()"></label>
+  </div>
+  <div class="card">
+    <label style="margin-top:0">Lautstärke<input type="range" id="s-vol" min="0.1" max="1" step="0.1" oninput="settings.volume=+this.value;saveSettings()"></label>
+    <label>Sprechtempo<input type="range" id="s-rate" min="0.7" max="1.3" step="0.1" oninput="settings.rate=+this.value;saveSettings()"></label>
+    <label>Distanz-Korrektur in % (GPS misst oft etwas zu lang → negativer Wert, z. B. -1)<input type="number" inputmode="decimal" id="s-corr" step="0.5" oninput="settings.corr=parseFloat(this.value)||0;saveSettings()"></label>
+  </div>
+  <button class="btn primary" style="width:100%" onclick="testAudio()">Ton &amp; Sprache testen</button>
+  <p class="muted">Tipp: Über Safari „Teilen → Zum Home-Bildschirm" installieren und von dort starten. Training und Verlauf werden nur auf diesem Gerät gespeichert.</p>
+</div>
+
+<div class="tabbar" id="tabbar">
+  <button data-v="home" onclick="show('home')"><b>🏃</b>Training</button>
+  <button data-v="hist" onclick="show('hist')"><b>📈</b>Verlauf</button>
+  <button data-v="set" onclick="show('set')"><b>⚙️</b>Einstellungen</button>
+</div>
+
+<script>
+/* ---------- Helfer ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=v=>parseInt(v)||0;
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+function fmtTime(sec){sec=Math.max(0,Math.round(sec));const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`}
+function fmtPace(p){if(!p||!isFinite(p)||p>1800)return '–:––';let m=Math.floor(p/60),s=Math.round(p%60);if(s===60){m++;s=0}return `${m}:${String(s).padStart(2,'0')}`}
+function fmtDist(m){return m<1000?`${Math.round(m)} m`:`${(m/1000).toFixed(2)} km`}
+function fmtDate(iso){return new Date(iso).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}
+
+/* ---------- Daten ---------- */
+function defaultPlan(){return {id:'p'+Date.now(),name:'5 × 1000 m',warm:10,cool:5,sets:[{reps:5,dist:1000,pace:240,rest:120}]}}
+let plans=LS.get('iv_plans',null)||[defaultPlan()];
+let history=LS.get('iv_hist',[]);
+let settings=Object.assign({beep:true,voice:true,hints:true,volume:0.8,rate:1,corr:0},LS.get('iv_settings',{}));
+const savePlans=()=>LS.set('iv_plans',plans);
+const saveHist=()=>LS.set('iv_hist',history);
+function saveSettings(){LS.set('iv_settings',settings)}
+
+function buildSteps(p){
+  const st=[];
+  if(p.warm>0)st.push({type:'warm',dur:p.warm*60,label:'Warm-up'});
+  const total=p.sets.reduce((a,s)=>a+s.reps,0);let n=0;
+  p.sets.forEach((s,si)=>{for(let r=0;r<s.reps;r++){n++;
+    st.push({type:'run',dist:s.dist,pace:s.pace,label:`Intervall ${n}/${total}`,n,total});
+    const last=(si===p.sets.length-1&&r===s.reps-1);
+    if(!last&&s.rest>0)st.push({type:'rest',dur:s.rest,label:'Pause'});
+  }});
+  if(p.cool>0)st.push({type:'cool',dur:p.cool*60,label:'Cool-down'});
+  return st;
+}
+function estSec(p){return buildSteps(p).reduce((a,s)=>a+(s.type==='run'?s.dist/1000*s.pace:s.dur),0)}
+function summ(p){
+  const sets=p.sets.map(s=>`${s.reps}×${s.dist} m @ ${fmtPace(s.pace)}${s.rest?` (${fmtTime(s.rest)} Pause)`:''}`).join(' + ');
+  return `${p.warm?p.warm+' min Warm-up · ':''}${sets}${p.cool?' · '+p.cool+' min Cool-down':''} · ca. ${Math.round(estSec(p)/60)} min`;
+}
+
+/* ---------- Navigation ---------- */
+function show(v){
+  document.querySelectorAll('.view').forEach(e=>e.classList.remove('on'));
+  $('#v-'+v).classList.add('on');
+  const main=['home','hist','set'].includes(v);
+  $('#tabbar').hidden=!main;
+  document.querySelectorAll('.tabbar button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  if(v==='home')renderHome();
+  if(v==='hist')renderHist();
+  window.scrollTo(0,0);
+}
+
+/* ---------- Home ---------- */
+function renderHome(){
+  $('#plans').innerHTML=plans.map(p=>`<div class="card"><h3>${esc(p.name)}</h3><div class="muted">${summ(p)}</div>
+  <div class="btns"><button class="btn primary" onclick="startRun('${p.id}')">Start</button><button class="btn" onclick="editPlan('${p.id}')">Bearbeiten</button></div></div>`).join('')||'<p class="muted">Noch kein Training angelegt.</p>';
+}
+
+/* ---------- Editor ---------- */
+let ed=null,edNew=false;
+function newPlan(){ed={id:'p'+Date.now(),name:'Neues Training',warm:10,cool:5,sets:[{reps:5,dist:1000,pace:240,rest:120}]};edNew=true;renderEd();show('edit')}
+function editPlan(id){ed=JSON.parse(JSON.stringify(plans.find(p=>p.id===id)));edNew=false;renderEd();show('edit')}
+function renderEd(){
+  $('#eddelwrap').hidden=edNew;
+  $('#edbody').innerHTML=`
+  <label>Name<input type="text" value="${esc(ed.name)}" oninput="ed.name=this.value"></label>
+  <label>Warm-up (Minuten, 0 = keins)<input type="number" inputmode="numeric" min="0" value="${ed.warm}" oninput="ed.warm=num(this.value);edSum()"></label>
+  ${ed.sets.map((s,i)=>`<div class="card" style="margin-top:14px">
+    <div class="row"><b>Satz ${i+1}</b>${ed.sets.length>1?`<button class="link" onclick="rmSet(${i})">Entfernen</button>`:''}</div>
+    <div class="grid2">
+      <label>Wiederholungen<input type="number" inputmode="numeric" min="1" value="${s.reps}" oninput="ed.sets[${i}].reps=Math.max(1,num(this.value));edSum()"></label>
+      <label>Distanz (m)<input type="number" inputmode="numeric" min="50" step="50" value="${s.dist}" oninput="ed.sets[${i}].dist=Math.max(50,num(this.value));edSum()"></label>
+      <label>Pace (min/km)<div class="paceinp"><input type="number" inputmode="numeric" min="1" value="${Math.floor(s.pace/60)}" oninput="setPace(${i},'m',this.value)">:<input type="number" inputmode="numeric" min="0" max="59" value="${String(s.pace%60).padStart(2,'0')}" oninput="setPace(${i},'s',this.value)"></div></label>
+      <label>Pause danach (Sek.)<input type="number" inputmode="numeric" min="0" value="${s.rest}" oninput="ed.sets[${i}].rest=num(this.value);edSum()"></label>
+    </div></div>`).join('')}
+  <button class="btn" style="width:100%" onclick="addSet()">+ Weiteren Satz hinzufügen</button>
+  <label>Cool-down (Minuten, 0 = keins)<input type="number" inputmode="numeric" min="0" value="${ed.cool}" oninput="ed.cool=num(this.value);edSum()"></label>`;
+  edSum();
+}
+function edSum(){$('#edsum').textContent=summ(ed)+' (nach dem letzten Intervall entfällt die Pause)'}
+function setPace(i,k,v){const s=ed.sets[i];let m=Math.floor(s.pace/60),sec=s.pace%60;if(k==='m')m=num(v);else sec=Math.min(59,num(v));s.pace=Math.max(60,m*60+sec);edSum()}
+function addSet(){const l=ed.sets[ed.sets.length-1];ed.sets.push({...l});renderEd()}
+function rmSet(i){ed.sets.splice(i,1);renderEd()}
+function savePlan(){
+  if(!ed.name.trim())ed.name='Training';
+  if(edNew)plans.push(ed);else plans=plans.map(p=>p.id===ed.id?ed:p);
+  savePlans();show('home');
+}
+function delPlan(){if(confirm('Dieses Training löschen?')){plans=plans.filter(p=>p.id!==ed.id);savePlans();show('home')}}
+
+/* ---------- Audio ---------- */
+let ac=null;
+function unlockAudio(){
+  try{if(!ac)ac=new(window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();
+    const o=ac.createOscillator(),g=ac.createGain();g.gain.value=0.0001;o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+0.05)}catch(e){}
+  try{const u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u)}catch(e){}
+}
+function beep(freq=880,dur=0.15){
+  if(!settings.beep||!ac)return;
+  try{const t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain(),v=settings.volume;
+    o.type='sine';o.frequency.value=freq;
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+0.01);g.gain.setValueAtTime(v,t+Math.max(0.02,dur-0.03));g.gain.linearRampToValueAtTime(0,t+dur);
+    o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+dur+0.02)}catch(e){}
+}
+function speak(text,delay=0){
+  if(!settings.voice||!('speechSynthesis' in window))return;
+  setTimeout(()=>{try{
+    if(speechSynthesis.speaking)speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);u.lang='de-DE';u.rate=settings.rate;u.volume=settings.volume;
+    const v=speechSynthesis.getVoices().find(v=>v.lang&&v.lang.toLowerCase().startsWith('de'));if(v)u.voice=v;
+    speechSynthesis.speak(u)}catch(e){}},delay);
+}
+function testAudio(){unlockAudio();beep(1320,0.35);speak('Intervall 1 von 5. 1000 Meter. Pace 4 Minuten pro Kilometer.',400)}
+const spDist=m=>(m>=1000&&m%1000===0)?`${m/1000} Kilometer`:`${m} Meter`;
+const spPace=p=>{const m=Math.floor(p/60),s=Math.round(p%60);return `${m} Minuten${s?' '+s:''} pro Kilometer`};
+const spDur=s=>(s>=60&&s%60===0)?`${s/60} ${s/60===1?'Minute':'Minuten'}`:`${s} Sekunden`;
+
+/* ---------- Wake Lock ---------- */
+async function requestWake(){try{if('wakeLock' in navigator&&R){R.wl=await navigator.wakeLock.request('screen')}}catch(e){}}
+function releaseWake(){try{if(R&&R.wl){R.wl.release();R.wl=null}}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&R&&R.state==='run')requestWake()});
+
+/* ---------- Lauf-Engine ---------- */
+let R=null;
+function hav(a,b){const r=Math.PI/180,R6=6371000,dLa=(b.lat-a.lat)*r,dLo=(b.lon-a.lon)*r;
+  const x=Math.sin(dLa/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dLo/2)**2;return 2*R6*Math.asin(Math.sqrt(x))}
+
+function startRun(id){
+  const plan=plans.find(p=>p.id===id);if(!plan)return;
+  if(!('geolocation' in navigator)){alert('Dieses Gerät bietet kein GPS im Browser.');return}
+  R={plan,steps:buildSteps(plan),state:'wait',i:0,stepTime:0,stepDist:0,total:0,totalDist:0,paused:false,last:performance.now(),lastPt:null,win:[],log:[],started:new Date().toISOString(),acc:null,flags:{},err:null};
+  $('#rtitle').textContent=plan.name;$('#runwait').hidden=false;$('#runlive').hidden=true;
+  show('run');paintGps();
+  R.watch=navigator.geolocation.watchPosition(onPos,onPosErr,{enableHighAccuracy:true,maximumAge:0,timeout:20000});
+}
+function abortWait(){stopSensors();R=null;show('home')}
+function stopSensors(){if(!R)return;clearInterval(R.timer);try{navigator.geolocation.clearWatch(R.watch)}catch(e){}releaseWake()}
+
+function onPosErr(e){R.err=e.code===1?'Standort verweigert – in iOS: Einstellungen → Datenschutz → Ortungsdienste → Safari/Intervall':'GPS-Fehler';paintGps()}
+function onPos(p){
+  if(!R)return;R.err=null;
+  const c=p.coords;R.acc=c.accuracy;paintGps();
+  if(c.accuracy>30)return;
+  const pt={lat:c.latitude,lon:c.longitude,t:p.timestamp};
+  if(!R.lastPt){R.lastPt=pt;return}
+  const dtp=(pt.t-R.lastPt.t)/1000;if(dtp<=0)return;
+  let d=hav(R.lastPt,pt);
+  if(d<1.5)return;
+  if(d/dtp>12)return;
+  d*=1+(settings.corr||0)/100;
+  R.lastPt=pt;
+  if(R.state==='run'&&!R.paused){
+    R.stepDist+=d;R.totalDist+=d;
+    const now=performance.now()/1000;R.win.push({t:now,d:R.totalDist});
+    while(R.win.length&&now-R.win[0].t>20)R.win.shift();
+  }
+}
+function paintGps(){
+  if(!R)return;
+  let cls='r',txt='GPS: suche …';
+  if(R.err){txt=R.err}
+  else if(R.acc!=null){cls=R.acc<=15?'g':R.acc<=30?'y':'r';txt=`GPS ±${Math.round(R.acc)} m`}
+  ['#gpsbox','#rgps'].forEach(s=>{const e=$(s);e.className='gps '+cls;e.textContent=txt});
+}
+function curPace(){
+  const w=R.win;if(w.length<2)return null;
+  const now=performance.now()/1000,last=w[w.length-1];if(now-last.t>8)return null;
+  const first=w.find(x=>last.t-x.t<=15)||w[0];const dd=last.d-first.d,dt=last.t-first.t;
+  if(dd<6||dt<3)return null;return dt/dd*1000;
+}
+
+function go(){
+  unlockAudio();R.state='run';R.last=performance.now();
+  $('#runwait').hidden=true;$('#runlive').hidden=false;
+  requestWake();enterStep(0);R.timer=setInterval(tick,250);
+}
+function enterStep(i){
+  R.i=i;R.stepTime=0;R.stepDist=0;R.flags={};
+  const s=R.steps[i];beep(1320,0.35);
+  let t='';
+  if(s.type==='warm')t=`Warm-up. ${spDur(s.dur)}.`;
+  else if(s.type==='run')t=`Intervall ${s.n} von ${s.total}. ${spDist(s.dist)}. Pace ${spPace(s.pace)}.`;
+  else if(s.type==='rest')t=`Pause. ${spDur(s.dur)}.`;
+  else t=`Cool-down. ${spDur(s.dur)}.`;
+  speak(t,400);paint();
+}
+function logStep(){
+  const s=R.steps[R.i];
+  R.log.push({type:s.type,label:s.label,target:s.type==='run'?s.pace:null,tdist:s.dist||null,dist:R.stepDist,time:R.stepTime});
+}
+function next(){logStep();if(R.i+1>=R.steps.length)finish(false);else enterStep(R.i+1)}
+function skipStep(){if(R&&R.state==='run'&&confirm('Abschnitt überspringen?'))next()}
+function togglePause(){
+  if(R.state!=='run')return;R.paused=!R.paused;R.win=[];R.lastPt=null;R.last=performance.now();
+  $('#rpause').textContent=R.paused?'Weiter':'Pause';paint();
+}
+function endEarly(){if(confirm('Training beenden und speichern?'))finish(true)}
+
+function tick(){
+  if(!R||R.state!=='run')return;
+  const now=performance.now(),dt=(now-R.last)/1000;R.last=now;
+  if(R.paused){paint();return}
+  R.stepTime+=dt;R.total+=dt;
+  const s=R.steps[R.i];
+  if(s.type==='run'){
+    const rem=s.dist-R.stepDist;
+    if(rem<=0){next();return}
+    if(rem<=100&&s.dist>=300&&!R.flags.h100){R.flags.h100=1;speak('Noch 100 Meter')}
+    if(settings.hints&&settings.voice){
+      const cp=Math.floor(R.stepDist/250);
+      if(cp>=1&&cp!==R.flags.cp&&rem>120){R.flags.cp=cp;const p=curPace();
+        if(p){const d=p-s.pace;speak(d>10?`Pace ${spPace(p).replace(' pro Kilometer','')}. Etwas schneller.`:d<-10?`Pace ${spPace(p).replace(' pro Kilometer','')}. Etwas langsamer.`:'Pace passt.')}}
+    }
+  }else{
+    const rem=s.dur-R.stepTime;
+    if(rem<=0){next();return}
+    const c=Math.ceil(rem);
+    if(c<=3&&R.flags.cnt!==c){R.flags.cnt=c;beep(880,0.15)}
+    if(s.type==='rest'&&s.dur>=20&&rem<=10&&!R.flags.t10){R.flags.t10=1;speak('Noch 10 Sekunden')}
+  }
+  paint();
+}
+
+function paint(){
+  const s=R.steps[R.i],v=$('#v-run');v.dataset.t=s.type;
+  $('#rstep').textContent=s.label+(s.type==='run'?` · ${fmtDist(s.dist)}`:'')+(R.paused?' · PAUSIERT':'');
+  let frac;
+  if(s.type==='run'){$('#rrem').textContent=Math.ceil(Math.max(0,s.dist-R.stepDist))+' m';frac=R.stepDist/s.dist}
+  else{$('#rrem').textContent=fmtTime(Math.ceil(Math.max(0,s.dur-R.stepTime)));frac=R.stepTime/s.dur}
+  $('#rbar').style.width=Math.min(100,Math.max(0,frac*100))+'%';
+  const p=curPace();$('#rpace').textContent=fmtPace(p);
+  $('#rtarget').textContent=s.type==='run'?fmtPace(s.pace):'–';
+  const dl=$('#rdelta');
+  if(s.type==='run'&&p){const d=Math.round(p-s.pace),a=Math.abs(d);
+    if(a<=5){dl.textContent='✓ im Ziel';dl.style.color='var(--ok)'}
+    else if(d>0){dl.textContent=`${a} s/km zu langsam`;dl.style.color=a>15?'var(--bad)':'var(--warn)'}
+    else{dl.textContent=`${a} s/km zu schnell`;dl.style.color=a>15?'var(--bad)':'var(--warn)'}
+  }else{dl.textContent='';}
+  $('#rtime').textContent=fmtTime(R.total);
+  $('#rdist').textContent=(R.totalDist/1000).toFixed(2);
+  $('#rcount').textContent=s.type==='run'?`${s.n}/${s.total}`:'–';
+  const nx=R.steps[R.i+1];
+  $('#rnext').textContent=nx?('Danach: '+(nx.type==='run'?`${nx.label} · ${fmtDist(nx.dist)} @ ${fmtPace(nx.pace)}`:nx.type==='rest'?`Pause ${fmtTime(nx.dur)}`:nx.label)):'Letzter Abschnitt';
+}
+
+function finish(early){
+  if(early&&R.stepTime>3)logStep();
+  stopSensors();R.state='done';
+  speak(`Training beendet. ${(R.totalDist/1000).toFixed(2).replace('.',' Komma ')} Kilometer.`);beep(1320,0.5);
+  let id=null;
+  if(R.total>=10){
+    id='r'+Date.now();
+    history.push({id,date:R.started,name:R.plan.name,time:R.total,dist:R.totalDist,pace:R.totalDist>30?R.total/R.totalDist*1000:0,log:R.log});
+    saveHist();
+  }
+  R=null;
+  if(id)showRun(id);else show('home');
+}
+
+/* ---------- Verlauf ---------- */
+function renderHist(){
+  const h=history.slice().reverse();
+  $('#histlist').innerHTML=h.length?h.map(r=>`<div class="card tap" onclick="showRun('${r.id}')"><div class="row"><b>${esc(r.name)}</b><span class="muted">${fmtDate(r.date)}</span></div>
+  <div class="muted">${(r.dist/1000).toFixed(2)} km · ${fmtTime(r.time)} · Ø ${fmtPace(r.pace)}/km</div></div>`).join(''):'<p class="muted">Noch keine Läufe gespeichert.</p>';
+}
+let curRun=null;
+function showRun(id){
+  const r=history.find(x=>x.id===id);if(!r)return;curRun=id;
+  const rows=r.log.map(l=>{
+    const pace=l.dist>30?l.time/l.dist*1000:0;
+    let col='';if(l.target&&pace){const d=pace-l.target;col=Math.abs(d)<=5?'var(--ok)':Math.abs(d)<=15?'var(--warn)':'var(--bad)'}
+    return `<tr><td>${esc(l.label)}</td><td>${Math.round(l.dist)} m</td><td>${fmtTime(l.time)}</td><td style="color:${col}">${fmtPace(pace)}${l.target?` <span class="muted">/ ${fmtPace(l.target)}</span>`:''}</td></tr>`}).join('');
+  $('#detail').innerHTML=`<h2>${esc(r.name)}</h2><div class="muted" style="margin-bottom:12px">${fmtDate(r.date)}</div>
+  <div class="stat card"><div><b>${(r.dist/1000).toFixed(2)}</b><small>km</small></div><div><b>${fmtTime(r.time)}</b><small>Zeit</small></div><div><b>${fmtPace(r.pace)}</b><small>Ø min/km</small></div></div>
+  <div class="card"><table><tr><th>Abschnitt</th><th>Dist.</th><th>Zeit</th><th>Pace / Ziel</th></tr>${rows}</table></div>`;
+  show('detail');
+}
+function delRun(){if(confirm('Diesen Lauf löschen?')){history=history.filter(x=>x.id!==curRun);saveHist();show('hist')}}
+async function exportHist(){
+  const txt=JSON.stringify(history,null,2);
+  try{if(navigator.share){await navigator.share({title:'Intervall-Verlauf',text:txt});return}}catch(e){if(e&&e.name==='AbortError')return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'application/json'}));a.download='intervall-verlauf.json';a.click();
+}
+
+/* ---------- Init ---------- */
+(function(){
+  $('#s-beep').checked=settings.beep;$('#s-voice').checked=settings.voice;$('#s-hints').checked=settings.hints;
+  $('#s-vol').value=settings.volume;$('#s-rate').value=settings.rate;$('#s-corr').value=settings.corr;
+  try{speechSynthesis.getVoices()}catch(e){}
+  savePlans();show('home');
+})();
+</script>
+</body>
+</html>

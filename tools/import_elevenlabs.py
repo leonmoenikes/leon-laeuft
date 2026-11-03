@@ -144,7 +144,11 @@ def main():
         with open(a.out, 'w') as f:
             f.write('/* Berliner Sprachansagen – ElevenLabs-Aufnahmen, importiert mit tools/import_elevenlabs.py. Nicht von Hand bearbeiten. */\n')
             f.write('window.VOICE_BERLIN=' + json.dumps(data, separators=(',', ':')) + ';\n')
+            f.write('window.VOICE_INFO=' + json.dumps({'name': 'ElevenLabs (Berliner Schnauze)', 'built': __import__('datetime').date.today().isoformat()}, ensure_ascii=False) + ';\n')
         print(f'{len(data)} Clips → {a.out} ({os.path.getsize(a.out) // 1024} KB)')
+        if os.path.abspath(a.out) == os.path.abspath(os.path.join(HERE, '..', 'voice.js')):
+            vv = importlib.util.spec_from_file_location('vv', os.path.join(HERE, 'voice_version.py'))
+            m = importlib.util.module_from_spec(vv); vv.loader.exec_module(m); m.bump()
 
 
 if __name__ == '__main__':

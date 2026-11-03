@@ -12,7 +12,7 @@
 <meta name="color-scheme" content="light dark">
 <link rel="apple-touch-icon" id="icon">
 <title>Intervall-Lauf</title>
-<script src="voice.js"></script>
+<script src="voice.js?v=13fcd0d1eb"></script>
 <script>
 // App-Icon zur Laufzeit erzeugen (für "Zum Home-Bildschirm")
 (function(){
@@ -398,6 +398,7 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
   <p class="foot">GPS misst oft etwas zu lang. Ein negativer Wert (z. B. −1) korrigiert das.</p>
   <div style="margin-top:22px"><button class="btn fill" onclick="testAudio()">Ton &amp; Sprache testen</button></div>
   <p class="foot" style="margin-top:14px">Tipp: In Safari „Teilen → Zum Home-Bildschirm“ wählen und die App von dort starten. Trainings und Verlauf werden nur auf diesem Gerät gespeichert.</p>
+  <p class="foot" id="s-info" style="margin-top:14px"></p>
 </div>
 
 <div class="tabbar" id="tabbar">
@@ -408,6 +409,7 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
 </div>
 
 <script>
+const APP_VER='2026-11-03.3'; // bei Änderungen hochzählen – wird in den Einstellungen angezeigt
 /* ---------- Helfer ---------- */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1135,6 +1137,8 @@ async function exportHist(){
   $('#s-beep').checked=settings.beep;$('#s-music').checked=settings.musicMode;$('#s-kalman').checked=settings.kalman;$('#s-doppler').checked=settings.doppler;$('#s-voice').checked=settings.voice;$('#s-berlin').checked=settings.berlin;$('#s-hints').checked=settings.hints;
   $('#s-startlock').checked=settings.startLocked;$('#s-autolock').checked=settings.autoLock;
   $('#s-vol').value=settings.volume;$('#s-vboost').value=settings.vboost;$('#s-rate').value=settings.rate;$('#s-corr').value=settings.corr;
+  const vi=window.VOICE_INFO,vn=window.VOICE_BERLIN?Object.keys(VOICE_BERLIN).length:0;
+  $('#s-info').textContent=`App-Stand ${APP_VER} · Stimme: ${vn?(vi?`${vi.name}, ${vn} Bausteine, Stand ${vi.built}`:`Thorsten (alt), ${vn} Bausteine`):'nicht geladen – App neu öffnen'}`;
   try{pickVoice();speechSynthesis.addEventListener('voiceschanged',pickVoice)}catch(e){}
   setAudioSession();
   savePlans();

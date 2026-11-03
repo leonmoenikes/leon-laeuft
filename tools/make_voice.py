@@ -130,7 +130,11 @@ def main():
     with open(out, 'w') as f:
         f.write('/* Berliner Sprachansagen – erzeugt mit tools/make_voice.py (Stimme: Piper de-thorsten-low). Nicht von Hand bearbeiten. */\n')
         f.write('window.VOICE_BERLIN=' + json.dumps(data, separators=(',', ':')) + ';\n')
+        f.write('window.VOICE_INFO=' + json.dumps({'name': 'Thorsten (Piper)', 'built': __import__('datetime').date.today().isoformat()}, ensure_ascii=False) + ';\n')
     print(f'{len(data)} Clips → {out} ({os.path.getsize(out) // 1024} KB)')
+    here = os.path.dirname(os.path.abspath(__file__))
+    if os.path.abspath(out) == os.path.abspath(os.path.join(here, '..', 'voice.js')):
+        sys.path.insert(0, here); import voice_version; voice_version.bump()
 
 
 if __name__ == '__main__':

@@ -259,6 +259,7 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
   <div class="kicker" id="today"></div>
   <div class="large">Training</div>
   <div id="week"></div>
+  <div id="racecard"></div>
   <div id="plans"></div>
   <button class="btn" onclick="newPlan()">＋ Neues Training</button>
 </div>
@@ -314,7 +315,7 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
     <div class="group next"><small>Danach</small><i id="rnextdot"></i><span id="rnext"></span></div>
     <div class="ctl">
       <button class="cbtn" onclick="togglePause()"><span class="ci pz" id="rpauseic"></span><span id="rpauselbl">Pause</span></button>
-      <button class="cbtn" onclick="skipStep()"><span class="ci"><svg viewBox="0 0 24 24"><path d="M5 5.5v13l9-6.5z"/><rect x="16" y="5.5" width="3" height="13" rx="1"/></svg></span><span>Überspringen</span></button>
+      <button class="cbtn" id="rskip" onclick="skipStep()"><span class="ci"><svg viewBox="0 0 24 24"><path d="M5 5.5v13l9-6.5z"/><rect x="16" y="5.5" width="3" height="13" rx="1"/></svg></span><span>Überspringen</span></button>
       <button class="cbtn" onclick="endEarly()"><span class="ci st"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg></span><span>Beenden</span></button>
     </div>
   </div>
@@ -336,6 +337,12 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
     <div class="txt"><span>Zum Entsperren schieben</span></div>
     <div class="thumb" id="thumb"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
   </div>
+</div>
+
+<!-- RENNMODUS -->
+<div class="view" id="v-race">
+  <div class="navbar"><button onclick="show('home')">‹ Training</button><b>Rennen</b><span style="min-width:80px"></span></div>
+  <div id="racebody"></div>
 </div>
 
 <!-- ANTONIA-MODUS -->
@@ -409,7 +416,7 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
 </div>
 
 <script>
-const APP_VER='2026-11-03.3'; // bei Änderungen hochzählen – wird in den Einstellungen angezeigt
+const APP_VER='2026-11-03.4'; // bei Änderungen hochzählen – wird in den Einstellungen angezeigt
 /* ---------- Helfer ---------- */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -478,6 +485,13 @@ function renderHome(){
     <div><b>${wk.length}</b><small>${wk.length===1?'Lauf':'Läufe'}</small></div>
     <div><b>${km2(wk.reduce((a,r)=>a+r.dist,0))}</b><small>km</small></div>
     <div><b>${fmtTime(wk.reduce((a,r)=>a+r.time,0))}</b><small>Zeit</small></div></div>`:'';
+  const rD=raceDist(rcf)||10000;
+  $('#racecard').innerHTML=`<div class="group plan k-test"><div class="ptop"><div class="pinfo">
+      <div class="when">Rennmodus</div><h3>${raceName(rD)} auf Zeit</h3>
+      <div class="meta"><span>${IC.clock}Ziel ${fmtTime(rcf.time||0)}</span><span>${IC.route}Ø ${fmtPace(rcf.time/(rD/1000))} /km</span></div></div>
+      <button class="play c" onclick="openRace()" aria-label="Rennmodus"><svg viewBox="0 0 24 24"><path d="M6 4.5v15l13-7.5z"/></svg></button></div>
+    <div class="why2">Negativ-Split mit Ansagen jeden Kilometer – damit du am Anfang nicht überpacst.</div>
+    <div class="pact"><button onclick="openRace()">Einstellen</button><button onclick="startRace(rcf)">Starten</button></div></div>`;
   $('#plans').innerHTML=plans.map(p=>{
     const reps=p.sets.reduce((a,s)=>a+s.reps,0),fast=p.sets.reduce((a,s)=>a+s.reps*s.dist,0);
     const lines=p.sets.map(s=>`<li>${s.reps} × ${s.dist} m @ ${fmtPace(s.pace)}${s.rest?` <span class="m">· ${fmtTime(s.rest)} Pause</span>`:''}</li>`).join('');
@@ -568,13 +582,14 @@ function loadVoice(){
 }
 // "@name": zufällige Variante (name_1, name_2 …); im Antonia-Modus bevorzugt die Varianten mit Namen (aname_…)
 function clipKey(k,antonia){
+  if(k.includes('|')){for(const x of k.split('|')){const c=clipKey(x,antonia);if(c&&VB.buf[c])return c}return null}
   if(k[0]!=='@')return k;k=k.slice(1);
   const reg=VB.keys.filter(x=>x.startsWith(k+'_')),ant=VB.keys.filter(x=>x.startsWith('a'+k+'_'));
   const pool=(antonia&&ant.length&&(['start','end'].includes(k)||Math.random()<.6||!reg.length))?ant:reg;
   return pool[Math.floor(Math.random()*pool.length)];
 }
 // Spielt Bausteine nacheinander; reiht sich hinter laufende Ansagen ein. low: entfällt, wenn gerade gesprochen wird.
-async function say(tokens,low=false,antonia=!!(R&&R.sess)){
+async function say(tokens,low=false,antonia=!!(R&&(R.sess||(R.race&&R.race.ant)))){
   if(VB.p)await VB.p;
   if(!VB.ready||!audioOn())return;
   const now=ac.currentTime;
@@ -608,6 +623,8 @@ const TK={
     if(m>=10000)return TK.km(m);
     const th=Math.floor(m/1000),h=Math.floor(m%1000/100),r=m%100;
     return [...(th?['t'+th]:[]),...(h?['h'+h]:[]),...(r?[TK.n(r)]:[]),'meta']},
+  time(t){t=Math.round(t);const h=Math.floor(t/3600),m=Math.floor(t%3600/60),r=t%60;return h?[h===1?'eene':TK.n(h),'stunde',TK.n(m),...(r?[TK.n(r)]:[])]:[TK.n(m),...(r?[TK.n(r)]:['minuten'])]},
+  secs:a=>a<60?(a===1?['eene','sekunde']:[TK.n(a),'sekunden']):TK.dur(a),
   pace(p,full){let m=Math.floor(p/60),r=Math.round(p%60);if(r===60){m++;r=0}return ['tempo',TK.n(m),r?TK.n(r):'minuten',...(full?['prokm']:[])]},
   nm:n=>({'Intervall':'nm_iv','Sprint':'nm_sprint','Tempo':'nm_tempo','Zieltempo':'nm_ziel','Dauerlauf':'nm_dauer','Langer Lauf':'nm_lang','Testlauf':'nm_test'})[n]||'nm_iv'
 };
@@ -701,7 +718,7 @@ function startPlan(plan,sess,back){
   R={plan,sess,back,steps:buildSteps(plan),state:'wait',i:0,stepTime:0,stepDist:0,total:0,totalDist:0,paused:false,locked:false,lastTouch:performance.now(),last:performance.now(),kf:null,lastF:null,skips:0,spd:null,spdT:0,win:[],log:[],started:new Date().toISOString(),acc:null,flags:{},err:null};
   $('#rtitle').textContent=plan.name;$('#rplan').textContent=summ(plan);$('#runwait').hidden=false;$('#runlive').hidden=true;
   $('#wseg').innerHTML=segHTML(R.steps);$('#rtl').innerHTML=$('#ltl').innerHTML=segHTML(R.steps,true);
-  $('#v-run').classList.remove('paused');paintPauseBtn();
+  $('#v-run').classList.remove('paused');paintPauseBtn();$('#rskip').style.visibility=plan.id==='race'?'hidden':'';
   show('run');paintGps();
   R.watch=navigator.geolocation.watchPosition(onPos,onPosErr,{enableHighAccuracy:true,maximumAge:0,timeout:20000});
 }
@@ -773,7 +790,7 @@ function curPace(){
 function go(){
   unlockAudio();R.state='run';R.last=performance.now();R.lastTouch=performance.now();
   $('#runwait').hidden=true;$('#runlive').hidden=false;
-  if(berlinOn())say(['@start']);
+  if(berlinOn()&&!R.race)say(['@start']);
   requestWake();enterStep(0);R.timer=setInterval(tick,250);
   if(settings.startLocked)setLocked(true);
 }
@@ -788,6 +805,7 @@ function enterStep(i){
   let tk;
   if(s.type==='run')tk=[...(s.total>1?(s.n===s.total?['@last']:[TK.nm(s.nm),TK.n(s.n),'von',TK.n(s.total)]):[TK.nm(s.nm)]),...TK.dist(s.dist),...TK.pace(s.pace,true)];
   else tk=['@'+s.type,...TK.dur(s.dur)];
+  if(R.race){t=`Rennen über ${raceName(R.race.D)}. Zielzeit ${spTime(R.race.T)}. Ruhig angehen.`;tk=['@rstart|@start']}
   cue(s.type,t,true,tk);paint();
 }
 function logStep(){
@@ -818,7 +836,8 @@ function tick(){
     const rem=s.dist-R.stepDist;
     if(rem<=0){next();return}
     if(rem<=100&&s.dist>=300&&!R.flags.h100){R.flags.h100=1;cue('h100','Noch 100 Meter',false,['@h100'])}
-    if(settings.hints&&(settings.voice||settings.musicMode)){
+    if(R.race)raceTick(s,rem);
+    else if(settings.hints&&(settings.voice||settings.musicMode)){
       // Lockere Läufe (tol): Hinweis nur jeden Kilometer und mit größerer Toleranz
       const he=s.tol?1000:250,th=s.tol?s.tol+5:10;
       const cp=Math.floor(R.stepDist/he);
@@ -849,8 +868,13 @@ function paint(){
   frac=Math.min(1,Math.max(0,frac));
   const sub=s.type==='run'?fmtDist(s.dist)+' @ '+fmtPace(s.pace)+' /km':s.type==='rest'?'Locker traben oder gehen':s.type==='warm'?'Locker einlaufen':'Locker auslaufen';
   ['#rtl','#ltl'].forEach(sel=>{const k=$(sel).children;for(let j=0;j<k.length;j++)k[j].firstChild.style.width=(j<R.i?100:j===R.i?frac*100:0)+'%'});
-  let dtxt='',dcol='';
-  if(s.type==='run'&&p){const d=Math.round(p-s.pace),a=Math.abs(d);
+  let dtxt='',dcol='',tgt=s.pace,rsub=sub;
+  const rc=R.race,rdiff=rc?racePlanAt(R.stepDist)-R.stepTime:0;
+  if(rc){const a=Math.round(Math.abs(rdiff)),sg=raceSeg(R.stepDist);tgt=sg.pace;
+    rsub=`Ziel ${fmtTime(rc.T)} · km ${rc.segs.indexOf(sg)+1} @ ${fmtPace(sg.pace)} /km`;
+    dtxt=a<=2?'Im Plan':`${a} s ${rdiff>0?'vor':'hinter'} Plan`;
+    dcol=rdiff>0?(a>(R.stepDist<2000?5:15)?'var(--orange)':'var(--green)'):(a<=5?'var(--green)':a<=15?'var(--orange)':'var(--red)')}
+  else if(s.type==='run'&&p){const d=Math.round(p-s.pace),a=Math.abs(d);
     const g=s.tol||5;
     if(a<=g){dtxt='Im Ziel';dcol='var(--green)'}
     else if(d>0){dtxt=`${a} s/km zu langsam`;dcol=a>g+10?'var(--red)':'var(--orange)'}
@@ -858,24 +882,27 @@ function paint(){
   const nx=R.steps[R.i+1];
   const cnt=s.type==='run'?`${s.n}/${s.total}`:'–';
   if(!R.locked){
-    $('#rstep').textContent=s.label;$('#rsub').textContent=sub;
+    $('#rstep').textContent=s.label;$('#rsub').textContent=rsub;
     $('#rrem').textContent=remTxt;$('#runit').textContent=unit;
     $('#rring').style.strokeDashoffset=RING*(1-frac);
     $('#rbadge').hidden=!R.paused;
     const rp=$('#rpace');rp.textContent=fmtPace(p);rp.style.color=dcol;
-    $('#rtarget').textContent=s.type==='run'?fmtPace(s.pace):'–';
+    $('#rtarget').textContent=s.type==='run'?fmtPace(tgt):'–';
     const dl=$('#rdelta');dl.textContent=dtxt;dl.style.color=dcol;
     $('#rtime').textContent=fmtTime(R.total);
     $('#rdist').textContent=km2(R.totalDist);
     const single=s.type==='run'&&s.total===1;
-    $('#rcount').textContent=single?fmtPace(R.stepDist>30?R.stepTime/R.stepDist*1000:0):cnt;$('#rcountl').textContent=single?'Ø Pace':'Intervall';
-    $('#rnextdot').className=nx?'k-'+nx.type:'';
-    $('#rnext').textContent=nx?(nx.type==='run'?`${nx.label} · ${fmtDist(nx.dist)} @ ${fmtPace(nx.pace)}`:nx.type==='rest'?`Pause · ${fmtTime(nx.dur)}`:`${nx.label} · ${fmtTime(nx.dur)}`):'Ziel – letzter Abschnitt';
+    if(rc){$('#rcount').textContent=fmtTime(rc.T-rdiff);$('#rcountl').textContent='Prognose'}
+    else{$('#rcount').textContent=single?fmtPace(R.stepDist>30?R.stepTime/R.stepDist*1000:0):cnt;$('#rcountl').textContent=single?'Ø Pace':'Intervall'}
+    $('#rnextdot').className=rc?'k-run':nx?'k-'+nx.type:'';
+    if(rc){const sg=raceSeg(R.stepDist),i=rc.segs.indexOf(sg);$('#rnext').textContent=`Bei ${i+1===rc.segs.length?'Ziel':'km '+(i+1)}: Soll ${fmtTime(sg.cum)}`}
+    else $('#rnext').textContent=nx?(nx.type==='run'?`${nx.label} · ${fmtDist(nx.dist)} @ ${fmtPace(nx.pace)}`:nx.type==='rest'?`Pause · ${fmtTime(nx.dur)}`:`${nx.label} · ${fmtTime(nx.dur)}`):'Ziel – letzter Abschnitt';
   }else{
     $('#lstep').textContent=s.label;$('#lcount').textContent=s.type==='run'?cnt:'';
     $('#lrem').textContent=remTxt;$('#lunit').textContent=unit;
     const lp=$('#lpace');lp.textContent=s.type==='run'?fmtPace(p):'';lp.style.color=dcol;
-    $('#ltarget').textContent=s.type==='run'?'Ziel '+fmtPace(s.pace):'';
+    $('#ltarget').textContent=s.type==='run'?'Ziel '+fmtPace(tgt):'';
+    if(rc)$('#lcount').textContent='Prognose '+fmtTime(rc.T-rdiff);
     const d=$('#ldelta');d.textContent=dtxt;d.style.color=dcol;
     $('#ltime').textContent=fmtTime(R.total);$('#ldist').textContent=km2(R.totalDist);
   }
@@ -884,7 +911,15 @@ function paint(){
 function finish(early){
   if(early&&R.stepTime>3)logStep();
   stopSensors();R.state='done';setLocked(false);
-  if(settings.musicMode)playPattern('end');
+  const rc=R.race;
+  if(rc&&!early){const good=R.total<=rc.T+0.5;
+    raceTalk(`Ziel! Endzeit ${spTime(R.total)}. ${good?'Zielzeit geknackt!':'Knapp vorbei.'}`,['#beep','@rfin','rtime',...TK.time(R.total),good?'@rgood':'@rmiss'],'end');
+    // Verlauf: Kilometer-Splits statt eines einzigen Abschnitts
+    const last=R.stepTime-rc.lastKmT,from=rc.splits.length*1000;
+    R.log=[...rc.splits.map(x=>({type:'run',label:`Km ${x.k}`,target:x.pace,tdist:1000,dist:1000,time:x.time})),
+      ...(rc.D-from>1?[{type:'run',label:rc.D-from<999?`Km ${fmtDist(rc.D).replace(' km','')}`:`Km ${rc.splits.length+1}`,target:rc.segs[rc.segs.length-1].pace,tdist:rc.D-from,dist:rc.D-from,time:last}]:[])];
+  }
+  else if(settings.musicMode)playPattern('end');
   else if(berlinOn())say(['#beep','@fin',...TK.km(R.totalDist),'@end']);
   else{speak(`Training beendet. ${(R.totalDist/1000).toFixed(2).replace('.',' Komma ')} Kilometer.`);beep(1320,0.5)}
   let id=null;
@@ -1082,7 +1117,9 @@ function renderPlan(){
 
 /* Einheit */
 function openSess(id){curSess=id;renderSess();show('sess')}
-function startSess(id){const s=coach&&coach.sessions.find(x=>x.id===id);if(s)startPlan(sessPlan(s),s.id,'coach')}
+function startSess(id){const s=coach&&coach.sessions.find(x=>x.id===id);if(!s)return;
+  if(s.kind==='test'){startRace({D:s.plan.sets[0].dist,time:coach.cfg.time,ant:true},s.id,'coach');return} // Testlauf = Rennmodus
+  startPlan(sessPlan(s),s.id,'coach')}
 function toggleDone(){const s=coach.sessions.find(x=>x.id===curSess);if(!s)return;s.done=s.done?null:{run:null,date:new Date().toISOString()};saveCoach();renderSess()}
 function renderSess(){
   const s=coach&&coach.sessions.find(x=>x.id===curSess);if(!s){show('coach');return}
@@ -1101,9 +1138,96 @@ function renderSess(){
   <div class="group why">${esc(s.why)}</div>
   <div class="head">Ablauf</div>
   <div class="group">${rows}</div>
-  <div style="margin-top:22px"><button class="btn fill" style="font-size:19px;padding:17px" onclick="startSess('${s.id}')">Einheit starten</button></div>
+  ${s.kind==='test'?`<p class="foot">Der Testlauf startet im Rennmodus: Negativ-Split auf deine Zielzeit, mit Zwischenzeiten jeden Kilometer. Vorher selbst ${s.plan.warm||10} Minuten einlaufen.</p>`:''}
+  <div style="margin-top:22px"><button class="btn fill" style="font-size:19px;padding:17px" onclick="startSess('${s.id}')">${s.kind==='test'?'Testlauf starten':'Einheit starten'}</button></div>
   <div class="btnrow"><button class="btn" onclick="toggleDone()">${s.done?'✓ Erledigt – zurücksetzen':'Als erledigt markieren'}</button></div>
   ${run?`<div class="btnrow"><button class="btn" onclick="showRun('${run.id}')">Lauf ansehen · ${km2(run.dist)} km in ${fmtTime(run.time)}</button></div>`:''}`;
+}
+
+/* ---------- Rennmodus ----------
+   Auf Zielzeit mit Negativ-Split: 1. km +5 s/km, letzte 2 km je −3 s/km,
+   dazwischen gleichmäßig – in Summe genau die Zielzeit. Ansagen jeden km
+   (Zwischenzeit + Abstand zum Plan), auf den ersten 2 km zusätzlich alle
+   500 m eine Warnung bei zu schnellem Start. */
+const RACE_D={'5k':5000,'10k':10000,'hm':21097.5},RACE_T={'5k':1500,'10k':3000,'hm':6600};
+let rcf=Object.assign({dist:'10k',km:10,time:3000,ant:!!coach},LS.get('iv_race',{}));
+const saveRcf=()=>LS.set('iv_race',rcf);
+const raceDist=c=>c.dist==='free'?Math.max(1000,Math.round((c.km||0)*1000)):RACE_D[c.dist];
+const raceName=D=>D===5000?'5 km':D===10000?'10 km':Math.abs(D-21097.5)<1?'Halbmarathon':fmtDist(D);
+function raceSplits(D,T){
+  const segs=[];for(let a=0;a<D-0.5;a+=1000)segs.push({from:a,to:Math.min(D,a+1000)});
+  const L=s=>(s.to-s.from)/1000;
+  segs.forEach((s,i)=>{s.o=(i===0&&D>=3000)?5:(D>=5000&&s.from>=D-2000-0.5)?-3:0});
+  const base=(T-segs.reduce((a,s)=>a+L(s)*s.o,0))/(D/1000);
+  let cum=0;segs.forEach(s=>{s.pace=base+s.o;cum+=L(s)*s.pace;s.cum=cum});
+  return segs;
+}
+const raceSeg=d=>R.race.segs.find(s=>d<s.to)||R.race.segs[R.race.segs.length-1];
+function racePlanAt(d){let t=0;for(const s of R.race.segs){if(d<=s.from)break;t+=(Math.min(d,s.to)-s.from)/1000*s.pace}return t}
+function startRace(c,sess=null,back='home'){
+  const D=c.D||raceDist(c),T=c.time;
+  if(!T||T/(D/1000)<150||T/(D/1000)>600){alert('Bitte eine realistische Zielzeit eingeben.');return}
+  startPlan({id:'race',name:`Rennen ${raceName(D)}`,warm:0,cool:0,nm:'Rennen',sets:[{reps:1,dist:D,pace:T/(D/1000),rest:0}]},sess,back);
+  if(R)R.race={D,T,segs:raceSplits(D,T),ant:!!c.ant,lastH:0,lastKmT:0,half:0,last:0,splits:[]};
+}
+// Ansage im Rennen: Berliner Stimme (wenn Teil 5 aufgenommen ist), sonst Töne; ohne Berliner Stimme iPhone-Stimme
+function raceTalk(text,tokens,pat){
+  const ant=!!(R&&(R.sess||(R.race&&R.race.ant)));
+  if(settings.musicMode){if(pat)playPattern(pat);return}
+  if(berlinOn()){(VB.p||Promise.resolve()).then(()=>{if(VB.buf.rahead)say(tokens,false,ant);else if(pat)playPattern(pat)});return}
+  speak(text);
+}
+const spTime=t=>{t=Math.round(t);const h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=t%60;return `${h?h+' Stunde ':''}${m} Minuten${s?' '+s:''}`};
+function raceKm(k,split,diff,rem){
+  const rc=R.race,a=Math.round(Math.abs(diff));
+  const half=!rc.half&&Math.abs(k*1000-rc.D/2)<1,last=!rc.last&&Math.abs(rem-1000)<80&&rc.D>=3000;
+  if(half)rc.half=1;if(last)rc.last=1;
+  const tk=[...(half?['@rhalf']:[]),'km',TK.n(k),...TK.time(split),
+    ...(a<=2?['@ron']:[...TK.secs(a),diff>0?'rahead':'rbehind']),
+    ...(k<=2&&diff>5?['@rfast']:k>2&&diff<-10?['@rslow']:[]),
+    ...(half?['rprog',...TK.time(rc.T-diff)]:[]),...(last?['@rlast']:[])];
+  const txt=`${half?'Halbzeit. ':''}Kilometer ${k}. ${spTime(split)}. ${a<=2?'Genau im Plan':`${a} Sekunden ${diff>0?'vor':'hinter'} dem Plan`}.${half?` Hochgerechnet ${spTime(rc.T-diff)}.`:''}${last?' Letzter Kilometer!':''}`;
+  raceTalk(txt,tk,k<=2&&diff>5?'slower':diff<-10?'faster':'t10');
+}
+function raceTick(s,rem){
+  const rc=R.race,d=R.stepDist,el=R.stepTime,diff=racePlanAt(d)-el,h=Math.floor(d/500);
+  if(h>=1&&h!==rc.lastH&&rem>150){rc.lastH=h;
+    if(h%2===0){const k=h/2,split=el-rc.lastKmT;rc.splits.push({k,time:split,pace:rc.segs[k-1].pace});rc.lastKmT=el;raceKm(k,split,diff,rem)}
+    else if(d<2000){const p=curPace(),tp=raceSeg(d).pace;
+      if(diff>4||(p&&p<tp-8))raceTalk('Zu schnell. Nimm Tempo raus.',['@rfast'],'slower')}
+  }
+  if(!rc.half&&rc.D>=3000&&d>=rc.D/2){rc.half=1;raceTalk(`Halbzeit. Hochgerechnet ${spTime(rc.T-diff)}.`,['@rhalf','rprog',...TK.time(rc.T-diff)],null)}
+  if(!rc.last&&rc.D>=3000&&rem<=1000){rc.last=1;raceTalk('Letzter Kilometer!',['@rlast'],'h100')}
+}
+// Einstellungen
+function openRace(){renderRace();show('race')}
+function rcfSet(k,v){rcf[k]=v;if(k==='dist'&&RACE_T[v])rcf.time=RACE_T[v];saveRcf();renderRace()}
+function segR(key,opts){return `<div class="segc">${opts.map(([v,l])=>`<button class="${rcf[key]===v?'on':''}" onclick="rcfSet('${key}',${JSON.stringify(v).replace(/"/g,"'")})">${l}</button>`).join('')}</div>`}
+function setRT(part,v){const t=rcf.time||0;let h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=t%60;v=num(v);
+  if(part==='h')h=v;else if(part==='m')m=Math.min(59,v);else s=Math.min(59,v);rcf.time=h*3600+m*60+s;saveRcf();renderRaceSplits()}
+function renderRaceSplits(){
+  const el=$('#rsplits');if(!el)return;const D=raceDist(rcf);
+  if(!rcf.time||!D){el.innerHTML='<div class="cell"><span class="l" style="color:var(--mut)">Bitte Zielzeit eingeben</span></div>';return}
+  const segs=raceSplits(D,rcf.time);
+  el.innerHTML=`<table><tr><th>Km</th><th>Tempo</th><th>Zeit</th></tr>${segs.map((s,i)=>`<tr><td>${s.to-s.from<999?fmtDist(s.to).replace(' km',''):i+1}${s.o>0?' <span class="tag k-easy" style="font-size:10px">ruhig</span>':s.o<0?' <span class="tag k-int" style="font-size:10px">zulegen</span>':''}</td><td>${fmtPace(s.pace)}</td><td>${fmtTime(s.cum)}</td></tr>`).join('')}</table>`;
+}
+function renderRace(){
+  const t=rcf.time||0,h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=t%60,z=x=>String(x).padStart(2,'0');
+  $('#racebody').innerHTML=`
+  <div class="large" style="margin-top:0">Rennmodus</div>
+  <p class="rsub">Auf Zielzeit mit Negativ-Split: Der erste Kilometer ist etwas ruhiger, die letzten zwei etwas schneller. Jeden Kilometer hörst du, wie du im Plan liegst – und am Anfang wirst du gebremst, wenn du zu schnell losläufst.</p>
+  <div class="head">Rennen</div>
+  <div class="group">
+    <div class="cell"><span class="l">Strecke</span>${segR('dist',[['5k','5 km'],['10k','10 km'],['hm','Halbm.'],['free','Frei']])}</div>
+    ${rcf.dist==='free'?`<label class="cell"><span class="l">Distanz (km)</span><input type="number" inputmode="decimal" step="0.1" min="1" value="${rcf.km}" oninput="rcf.km=parseFloat(String(this.value).replace(',','.'))||0;saveRcf();renderRaceSplits()"></label>`:''}
+    <div class="cell"><span class="l">Zielzeit</span><span class="pace"><input type="number" inputmode="numeric" min="0" placeholder="0" value="${h||''}" oninput="setRT('h',this.value)">:<input type="number" inputmode="numeric" min="0" max="59" placeholder="mm" value="${t?z(m):''}" oninput="setRT('m',this.value)">:<input type="number" inputmode="numeric" min="0" max="59" placeholder="ss" value="${t?z(s):''}" oninput="setRT('s',this.value)"></span></div>
+    <div class="cell"><span class="l">Ansprache</span>${segR('ant',[[false,'Neutral'],[true,'Antonia']]).replace('class="segc"','class="segc" style="max-width:190px"')}</div>
+  </div>
+  <div class="head">Renneinteilung</div>
+  <div class="group" id="rsplits"></div>
+  <p class="foot">Die Distanz misst das GPS. Es weicht von den offiziellen Kilometerschildern meist etwas ab (oft misst es zu lang) – das lässt sich in den Einstellungen mit der Distanz-Korrektur ausgleichen. Vor dem Start selbst einlaufen, der Rennmodus hat kein Warm-up.</p>
+  <div style="margin-top:22px"><button class="btn fill" style="background:var(--purple);font-size:19px;padding:17px" onclick="startRace(rcf,null,'race')">Zum Start</button></div>`;
+  renderRaceSplits();
 }
 
 /* ---------- Verlauf ---------- */

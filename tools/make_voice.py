@@ -79,6 +79,33 @@ CLIPS.update({
     'end_2': 'Na also, jeht doch.',
     'aend_1': 'Antonia, dit war stark, sach ick ja selten.',
     'aend_2': "Jut jemacht, Antonia, jetz ab uff's Sofa.",
+    # Rennmodus (ElevenLabs Teil 5)
+    'rstart_1': 'Rennen läuft. Ruhig anjehen, nich gleich allet verheizen.',
+    'rstart_2': 'Na denn, Rennen. Und bloß nich zu schnell loslaufen, wa.',
+    'arstart_1': 'Antonia, Rennen läuft. Ruhig anjehen, nich gleich allet verheizen.',
+    'rfast_1': 'Zu schnell! Nimm ma Tempo raus, det rächt sich hinten raus.',
+    'rfast_2': 'Langsam, Mensch! Det Rennen wird hinten entschieden.',
+    'arfast_1': 'Antonia, zu schnell! Nimm ma Tempo raus.',
+    'rslow_1': 'Du verlierst Zeit, bisschen Jas jeben.',
+    'arslow_1': 'Antonia, du verlierst Zeit, bisschen Jas jeben.',
+    'rahead': "vor'm Plan.",
+    'rbehind': "hinter'm Plan.",
+    'ron_1': 'Jenau im Plan, kann man nich meckern.',
+    'ron_2': 'Im Plan, weita so.',
+    'aron_1': 'Antonia, jenau im Plan.',
+    'rhalf_1': 'Halbzeit.',
+    'rprog': 'Hochjerechnet',
+    'rlast_1': 'Letzta Kilometa! Jetz raushauen, wat noch drin is!',
+    'arlast_1': 'Letzta Kilometa, Antonia! Jetz raushauen, wat noch drin is!',
+    'rfin_1': 'Ziel! Dit wars.',
+    'rtime': 'Endzeit',
+    'rgood_1': 'Zielzeit jeknackt. Respekt, ehrlich.',
+    'rgood_2': 'Unter Zielzeit. Na also, jeht doch.',
+    'argood_1': 'Antonia, Zielzeit jeknackt! Dit war richtig stark.',
+    'rmiss_1': 'Knapp vorbei. Nächstet Mal, wa.',
+    'armiss_1': 'Knapp vorbei, Antonia. Nächstet Mal packste dit.',
+    'stunde': 'Stunde',
+    'sekunde': 'Sekunde',
 })
 
 
@@ -94,7 +121,21 @@ TAGS = {
     'slower_1': 'annoyed', 'slower_2': 'grumpy', 'slower_3': 'sarcastic', 'aslower_1': 'grumpy',
     'ok_1': 'grudging', 'ok_2': 'deadpan', 'ok_3': 'grumpy', 'aok_1': 'grudging',
     'fin_1': 'relieved', 'end_1': 'grudging', 'end_2': 'deadpan', 'aend_1': 'grudging', 'aend_2': 'grumpy',
+    'rstart_1': 'serious', 'rstart_2': 'grumpy', 'arstart_1': 'serious',
+    'rfast_1': 'annoyed', 'rfast_2': 'grumpy', 'arfast_1': 'annoyed', 'rslow_1': 'annoyed', 'arslow_1': 'annoyed',
+    'ron_1': 'grudging', 'ron_2': 'deadpan', 'aron_1': 'grudging', 'rhalf_1': 'serious',
+    'rlast_1': 'annoyed', 'arlast_1': 'annoyed', 'rfin_1': 'relieved',
+    'rgood_1': 'grudging', 'rgood_2': 'deadpan', 'argood_1': 'grudging', 'rmiss_1': 'sighs', 'armiss_1': 'sighs',
 }
+
+
+def parts():
+    """Aufteilung für ElevenLabs: Teil 1-4 je 32 Bausteine (unverändert), ab Teil 5 Ergänzungen."""
+    items = list(CLIPS.items())
+    out = [items[i * 32:(i + 1) * 32] for i in range(4)]
+    if len(items) > 128:
+        out.append(items[128:])
+    return out
 
 
 def synth(model, text, out_wav):

@@ -5,29 +5,34 @@ Modell "Eleven Multilingual v2" wählen – nur dieses versteht die <break>-Paus
 Für Eleven v4 bitte elevenlabs-skript-v4.txt verwenden.
 
 So geht es:
-1. Gleiche Stimme und Einstellungen für alle 4 Teile.
+1. Gleiche Stimme und Einstellungen für alle Teile.
 2. Jeden Teil komplett (alles zwischen den Strichlinien) einfügen, erzeugen, als MP3 herunterladen.
-3. Dateien benennen: teil1.mp3 … teil4.mp3 – und hochladen.
+3. Dateien benennen: teil1.mp3, teil2.mp3 … – und hochladen.
 
 Wichtig: Nichts umstellen oder weglassen – die Zuordnung erfolgt über die Reihenfolge.
 
-TEIL 1 von 4  (32 Sätze)
+TEIL 1 von 5  (32 Sätze)
 ------------------------------------------------------------
 null <break time="1.5s" /> eens <break time="1.5s" /> zwee <break time="1.5s" /> drei <break time="1.5s" /> vier <break time="1.5s" /> fünf <break time="1.5s" /> sechs <break time="1.5s" /> siebn <break time="1.5s" /> acht <break time="1.5s" /> neun <break time="1.5s" /> zehn <break time="1.5s" /> elf <break time="1.5s" /> zwölf <break time="1.5s" /> dreizehn <break time="1.5s" /> vierzehn <break time="1.5s" /> fuffzehn <break time="1.5s" /> sechzehn <break time="1.5s" /> siebzehn <break time="1.5s" /> achtzehn <break time="1.5s" /> neunzehn <break time="1.5s" /> zwanzig <break time="1.5s" /> eenundzwanzig <break time="1.5s" /> zweeundzwanzig <break time="1.5s" /> dreiundzwanzig <break time="1.5s" /> vierundzwanzig <break time="1.5s" /> fünfundzwanzig <break time="1.5s" /> sechsundzwanzig <break time="1.5s" /> siebnundzwanzig <break time="1.5s" /> achtundzwanzig <break time="1.5s" /> neunundzwanzig <break time="1.5s" /> dreißig <break time="1.5s" /> eenunddreißig
 ------------------------------------------------------------
 
-TEIL 2 von 4  (32 Sätze)
+TEIL 2 von 5  (32 Sätze)
 ------------------------------------------------------------
 zweeunddreißig <break time="1.5s" /> dreiunddreißig <break time="1.5s" /> vierunddreißig <break time="1.5s" /> fünfunddreißig <break time="1.5s" /> sechsunddreißig <break time="1.5s" /> siebnunddreißig <break time="1.5s" /> achtunddreißig <break time="1.5s" /> neununddreißig <break time="1.5s" /> vierzig <break time="1.5s" /> eenundvierzig <break time="1.5s" /> zweeundvierzig <break time="1.5s" /> dreiundvierzig <break time="1.5s" /> vierundvierzig <break time="1.5s" /> fünfundvierzig <break time="1.5s" /> sechsundvierzig <break time="1.5s" /> siebnundvierzig <break time="1.5s" /> achtundvierzig <break time="1.5s" /> neunundvierzig <break time="1.5s" /> fuffzig <break time="1.5s" /> eenundfuffzig <break time="1.5s" /> zweeundfuffzig <break time="1.5s" /> dreiundfuffzig <break time="1.5s" /> vierundfuffzig <break time="1.5s" /> fünfundfuffzig <break time="1.5s" /> sechsundfuffzig <break time="1.5s" /> siebnundfuffzig <break time="1.5s" /> achtundfuffzig <break time="1.5s" /> neunundfuffzig <break time="1.5s" /> een <break time="1.5s" /> eene <break time="1.5s" /> hundert <break time="1.5s" /> zweehundert
 ------------------------------------------------------------
 
-TEIL 3 von 4  (32 Sätze)
+TEIL 3 von 5  (32 Sätze)
 ------------------------------------------------------------
 dreihundert <break time="1.5s" /> vierhundert <break time="1.5s" /> fünfhundert <break time="1.5s" /> sechshundert <break time="1.5s" /> siebnhundert <break time="1.5s" /> achthundert <break time="1.5s" /> neunhundert <break time="1.5s" /> tausend <break time="1.5s" /> zweetausend <break time="1.5s" /> dreitausend <break time="1.5s" /> viertausend <break time="1.5s" /> fünftausend <break time="1.5s" /> sechstausend <break time="1.5s" /> siebntausend <break time="1.5s" /> achttausend <break time="1.5s" /> neuntausend <break time="1.5s" /> von <break time="1.5s" /> Meta <break time="1.5s" /> Kilometa <break time="1.5s" /> Komma <break time="1.5s" /> Tempo <break time="1.5s" /> Minuten <break time="1.5s" /> Minute <break time="1.5s" /> Sekunden <break time="1.5s" /> pro Kilometa <break time="1.5s" /> Intervall <break time="1.5s" /> Sprint <break time="1.5s" /> Tempo <break time="1.5s" /> Zieltempo <break time="1.5s" /> Dauerloof <break time="1.5s" /> Langa Loof <break time="1.5s" /> Testloof, jetz jilt's.
 ------------------------------------------------------------
 
-TEIL 4 von 4  (32 Sätze)
+TEIL 4 von 5  (32 Sätze)
 ------------------------------------------------------------
 Na jut, denn mach ma. Los jeht's. <break time="1.5s" /> Ooch, schon wieda loofen? Na denn, ab jeht's. <break time="1.5s" /> Na Antonia, denn mach ma. Los jeht's. <break time="1.5s" /> Antonia, wat soll's. Ab jeht's. <break time="1.5s" /> Uffwärmen, janz locker, keene Hektik. <break time="1.5s" /> Ausloofen, endlich, de Arbeit is jetan. <break time="1.5s" /> Pause, ma durchschnaufen. <break time="1.5s" /> Pause, nu steh hier nich rum, trab locker. <break time="1.5s" /> Pause, Antonia, ma durchschnaufen. <break time="1.5s" /> Letztet Intervall, jetz reiß dir ma zusamm. <break time="1.5s" /> Letztet Intervall, Antonia, jetz reiß dir ma zusamm. <break time="1.5s" /> Noch hundert Meta, nu mach schon, jib Jas! <break time="1.5s" /> Hundert Meta noch, det schaffste ooch. <break time="1.5s" /> Noch hundert Meta, Antonia, jib Jas! <break time="1.5s" /> Noch zehn Sekunden, mach dir bereit. <break time="1.5s" /> Mensch, schnella, det is doch keen Spaziergang. <break time="1.5s" /> Wat trödelste so rum, jib Jas! <break time="1.5s" /> Na, schläfste schon? Bisschen flotta, wa. <break time="1.5s" /> Antonia, wat is'n los? Schnella! <break time="1.5s" /> Langsam, wo willste denn hin? <break time="1.5s" /> Nich so hetzen, Mensch. <break time="1.5s" /> Immer mit de Ruhe, det is keen Wettrenn. <break time="1.5s" /> Antonia, nich so hetzen, langsama. <break time="1.5s" /> Passt, kann man nich meckern. <break time="1.5s" /> Jo, läuft. <break time="1.5s" /> Allet im Lot, weita so. <break time="1.5s" /> Passt, Antonia, kann man nich meckern. <break time="1.5s" /> Feierabend, dit Trainin is vorbei. <break time="1.5s" /> Jut jemacht, ehrlich. <break time="1.5s" /> Na also, jeht doch. <break time="1.5s" /> Antonia, dit war stark, sach ick ja selten. <break time="1.5s" /> Jut jemacht, Antonia, jetz ab uff's Sofa.
+------------------------------------------------------------
+
+TEIL 5 von 5  (26 Sätze)
+------------------------------------------------------------
+Rennen läuft. Ruhig anjehen, nich gleich allet verheizen. <break time="1.5s" /> Na denn, Rennen. Und bloß nich zu schnell loslaufen, wa. <break time="1.5s" /> Antonia, Rennen läuft. Ruhig anjehen, nich gleich allet verheizen. <break time="1.5s" /> Zu schnell! Nimm ma Tempo raus, det rächt sich hinten raus. <break time="1.5s" /> Langsam, Mensch! Det Rennen wird hinten entschieden. <break time="1.5s" /> Antonia, zu schnell! Nimm ma Tempo raus. <break time="1.5s" /> Du verlierst Zeit, bisschen Jas jeben. <break time="1.5s" /> Antonia, du verlierst Zeit, bisschen Jas jeben. <break time="1.5s" /> vor'm Plan. <break time="1.5s" /> hinter'm Plan. <break time="1.5s" /> Jenau im Plan, kann man nich meckern. <break time="1.5s" /> Im Plan, weita so. <break time="1.5s" /> Antonia, jenau im Plan. <break time="1.5s" /> Halbzeit. <break time="1.5s" /> Hochjerechnet <break time="1.5s" /> Letzta Kilometa! Jetz raushauen, wat noch drin is! <break time="1.5s" /> Letzta Kilometa, Antonia! Jetz raushauen, wat noch drin is! <break time="1.5s" /> Ziel! Dit wars. <break time="1.5s" /> Endzeit <break time="1.5s" /> Zielzeit jeknackt. Respekt, ehrlich. <break time="1.5s" /> Unter Zielzeit. Na also, jeht doch. <break time="1.5s" /> Antonia, Zielzeit jeknackt! Dit war richtig stark. <break time="1.5s" /> Knapp vorbei. Nächstet Mal, wa. <break time="1.5s" /> Knapp vorbei, Antonia. Nächstet Mal packste dit. <break time="1.5s" /> Stunde <break time="1.5s" /> Sekunde
 ------------------------------------------------------------
 

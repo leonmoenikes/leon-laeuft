@@ -7,13 +7,13 @@ Tipp: Den Stabilitäts-Regler eher niedrig stellen ("Creative"), dann setzt
 v4 die Stimmungen stärker um.
 
 So geht es:
-1. Gleiche Stimme und Einstellungen für alle 4 Teile.
+1. Gleiche Stimme und Einstellungen für alle Teile.
 2. Jeden Teil komplett (alles zwischen den Strichlinien) einfügen, erzeugen, als MP3 herunterladen.
-3. Dateien benennen: teil1.mp3 … teil4.mp3 – und hochladen.
+3. Dateien benennen: teil1.mp3, teil2.mp3 … – und hochladen.
 
 Wichtig: Nichts umstellen oder weglassen – die Zuordnung erfolgt über die Reihenfolge.
 
-TEIL 1 von 4  (32 Sätze)
+TEIL 1 von 5  (32 Sätze)
 ------------------------------------------------------------
 null [long pause]
 
@@ -80,7 +80,7 @@ dreißig [long pause]
 eenunddreißig [long pause]
 ------------------------------------------------------------
 
-TEIL 2 von 4  (32 Sätze)
+TEIL 2 von 5  (32 Sätze)
 ------------------------------------------------------------
 zweeunddreißig [long pause]
 
@@ -147,7 +147,7 @@ hundert [long pause]
 zweehundert [long pause]
 ------------------------------------------------------------
 
-TEIL 3 von 4  (32 Sätze)
+TEIL 3 von 5  (32 Sätze)
 ------------------------------------------------------------
 dreihundert [long pause]
 
@@ -214,7 +214,7 @@ Langa Loof [long pause]
 [serious] Testloof, jetz jilt's. [long pause]
 ------------------------------------------------------------
 
-TEIL 4 von 4  (32 Sätze)
+TEIL 4 von 5  (32 Sätze)
 ------------------------------------------------------------
 [grumpy] Na jut, denn mach ma. Los jeht's. [long pause]
 
@@ -279,5 +279,60 @@ TEIL 4 von 4  (32 Sätze)
 [grudging] Antonia, dit war stark, sach ick ja selten. [long pause]
 
 [grumpy] Jut jemacht, Antonia, jetz ab uff's Sofa. [long pause]
+------------------------------------------------------------
+
+TEIL 5 von 5  (26 Sätze)
+------------------------------------------------------------
+[serious] Rennen läuft. Ruhig anjehen, nich gleich allet verheizen. [long pause]
+
+[grumpy] Na denn, Rennen. Und bloß nich zu schnell loslaufen, wa. [long pause]
+
+[serious] Antonia, Rennen läuft. Ruhig anjehen, nich gleich allet verheizen. [long pause]
+
+[annoyed] Zu schnell! Nimm ma Tempo raus, det rächt sich hinten raus. [long pause]
+
+[grumpy] Langsam, Mensch! Det Rennen wird hinten entschieden. [long pause]
+
+[annoyed] Antonia, zu schnell! Nimm ma Tempo raus. [long pause]
+
+[annoyed] Du verlierst Zeit, bisschen Jas jeben. [long pause]
+
+[annoyed] Antonia, du verlierst Zeit, bisschen Jas jeben. [long pause]
+
+vor'm Plan. [long pause]
+
+hinter'm Plan. [long pause]
+
+[grudging] Jenau im Plan, kann man nich meckern. [long pause]
+
+[deadpan] Im Plan, weita so. [long pause]
+
+[grudging] Antonia, jenau im Plan. [long pause]
+
+[serious] Halbzeit. [long pause]
+
+Hochjerechnet [long pause]
+
+[annoyed] Letzta Kilometa! Jetz raushauen, wat noch drin is! [long pause]
+
+[annoyed] Letzta Kilometa, Antonia! Jetz raushauen, wat noch drin is! [long pause]
+
+[relieved] Ziel! Dit wars. [long pause]
+
+Endzeit [long pause]
+
+[grudging] Zielzeit jeknackt. Respekt, ehrlich. [long pause]
+
+[deadpan] Unter Zielzeit. Na also, jeht doch. [long pause]
+
+[grudging] Antonia, Zielzeit jeknackt! Dit war richtig stark. [long pause]
+
+[sighs] Knapp vorbei. Nächstet Mal, wa. [long pause]
+
+[sighs] Knapp vorbei, Antonia. Nächstet Mal packste dit. [long pause]
+
+Stunde [long pause]
+
+Sekunde [long pause]
 ------------------------------------------------------------
 

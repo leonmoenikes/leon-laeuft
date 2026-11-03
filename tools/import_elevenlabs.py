@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Importiert die ElevenLabs-Aufnahmen (teil1..4.mp3) als Sprach-Bausteine (voice.js).
 
-  python3 tools/import_elevenlabs.py teil1.mp3 teil2.mp3 teil3.mp3 teil4.mp3 \
-      --out voice.js [--check] [--clips ORDNER]
+  python3 tools/import_elevenlabs.py tools/elevenlabs/teil1.mp3 … teil5.mp3 \
+      [--out voice.js] [--check] [--clips ORDNER]
 
-Jeder Teil enthält 32 Sätze in der Reihenfolge aus make_voice.CLIPS
+Werden weniger Teile angegeben als definiert, bleiben die übrigen Bausteine
+aus der vorhandenen voice.js erhalten.
+
+Jeder Teil enthält die Sätze aus make_voice.parts() (Teil 1-4 je 32, Teil 5 Rennmodus)
 (siehe make_elevenlabs_script.py). Die Schnittstellen werden so gewählt,
 dass die Pausen möglichst lang sind UND jeder Abschnitt ungefähr so lang
 ist, wie sein Text erwarten lässt (dynamische Programmierung). So werden
@@ -113,16 +116,21 @@ def segment(x, texts):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('parts', nargs=4)
+    ap.add_argument('parts', nargs='+', help='teil1.mp3 teil2.mp3 … in dieser Reihenfolge')
     ap.add_argument('--out', default=os.path.join(HERE, '..', 'voice.js'))
     ap.add_argument('--check', action='store_true')
     ap.add_argument('--clips')
     a = ap.parse_args()
-    items = list(mv.CLIPS.items())
-    assert len(items) == 4 * PER_PART, len(items)
+    blocks = mv.parts()
+    if len(a.parts) > len(blocks):
+        raise SystemExit(f'{len(a.parts)} Dateien, aber nur {len(blocks)} Teile definiert.')
+    # Bausteine aus noch nicht aufgenommenen Teilen aus der bisherigen voice.js übernehmen
     data, warn = {}, 0
+    if not a.check and os.path.exists(a.out):
+        s = open(a.out).read(); i = s.index('window.VOICE_BERLIN=') + 20
+        data = json.loads(s[i:s.index(';\n', i)])
     for pi, path in enumerate(a.parts):
-        block = items[pi * PER_PART:(pi + 1) * PER_PART]
+        block = blocks[pi]
         segs, min_used, max_unused = segment(load(path), [t for k, t in block])
         print(f'\n=== Teil {pi + 1}: {os.path.basename(path)}  (kürzeste gewählte Pause {min_used:.2f}s, '
               f'längste ungenutzte {max_unused:.2f}s)')

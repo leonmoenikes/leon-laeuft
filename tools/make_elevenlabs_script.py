@@ -7,7 +7,7 @@
 - elevenlabs-skript-v4.txt  Eleven v4/v3: Audio-Tags für die Stimmung, Pausen über
                             Zeilenumbrüche und [long pause]
 
-Reihenfolge und Aufteilung (4 Teile à 32) müssen beim Import gleich bleiben.
+Reihenfolge und Aufteilung (Teil 1-4 à 32, Teil 5 Rennmodus) müssen beim Import gleich bleiben.
 """
 import importlib.util, os, sys
 sys.dont_write_bytecode = True
@@ -15,10 +15,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location('mv', os.path.join(HERE, 'make_voice.py'))
 mv = importlib.util.module_from_spec(spec); spec.loader.exec_module(mv)
 
-PARTS = 4
-items = list(mv.CLIPS.items())
-size = -(-len(items) // PARTS)
-blocks = [items[i * size:(i + 1) * size] for i in range(PARTS)]
+blocks = mv.parts()
+PARTS = len(blocks)
 
 
 def write(name, head, fmt, sep):
@@ -30,9 +28,9 @@ def write(name, head, fmt, sep):
 
 
 COMMON = ['', 'So geht es:',
-          '1. Gleiche Stimme und Einstellungen für alle 4 Teile.',
+          '1. Gleiche Stimme und Einstellungen für alle Teile.',
           '2. Jeden Teil komplett (alles zwischen den Strichlinien) einfügen, erzeugen, als MP3 herunterladen.',
-          '3. Dateien benennen: teil1.mp3 … teil4.mp3 – und hochladen.', '',
+          '3. Dateien benennen: teil1.mp3, teil2.mp3 … – und hochladen.', '',
           'Wichtig: Nichts umstellen oder weglassen – die Zuordnung erfolgt über die Reihenfolge.', '']
 
 write('elevenlabs-skript.txt',

@@ -98,10 +98,15 @@ def main():
         for key, text in CLIPS.items():
             raw, mp3 = os.path.join(td, key + '.wav'), os.path.join(td, key + '.mp3')
             synth(model, text, raw)
-            # Stille vorn/hinten entfernen, Pegel angleichen, als kleines Mono-MP3 speichern
+            # Stille vorn/hinten entfernen, dann auf "setzt sich gegen Musik durch" trimmen:
+            # Bass raus, Präsenz (3 kHz) anheben, kräftig komprimieren, Pegel angleichen, Limiter.
+            # Ergebnis ca. -11 LUFS (Spotify spielt mit -14 LUFS), Spitzen unter -2 dBFS.
             af = ('silenceremove=start_periods=1:start_threshold=-45dB,areverse,'
                   'silenceremove=start_periods=1:start_threshold=-45dB,areverse,'
-                  'highpass=f=70,dynaudnorm=f=150:g=15:p=0.9')
+                  'highpass=f=110,equalizer=f=3000:t=q:w=1.1:g=5,equalizer=f=250:t=q:w=1:g=-3,'
+                  'dynaudnorm=f=150:g=15:p=0.9,'
+                  'acompressor=threshold=-26dB:ratio=6:attack=3:release=50:makeup=6,'
+                  'volume=9dB,alimiter=limit=0.79:attack=2:release=40:level=false')
             subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-i', raw, '-af', af,
                             '-ac', '1', '-ar', '16000', '-b:a', '40k', mp3], check=True)
             with open(mp3, 'rb') as f:

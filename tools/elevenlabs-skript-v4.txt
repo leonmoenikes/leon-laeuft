@@ -1,8 +1,11 @@
 ElevenLabs-Skript für Eleven v4 / v3 (mit Audio-Tags)
 =====================================================
 
-Die [Tags] in eckigen Klammern steuern die Stimmung (mürrisch, genervt, trocken …)
-und werden nicht mitgesprochen. [long pause] sorgt für den Abstand zwischen den Sätzen.
+Die [Tags] in eckigen Klammern werden nicht mitgesprochen:
+  [with a strong Berlin accent]  lenkt das Modell Richtung Berlinerisch (klappt bei
+                                 deutschen Dialekten noch nicht immer fehlerfrei)
+  [cheeky], [deadpan], [annoyed] … die Stimmung: frech-schnoddrig, trocken, genervt …
+  [long pause]                   der Abstand zwischen den Sätzen
 Tipp: Den Stabilitäts-Regler eher niedrig stellen ("Creative"), dann setzt
 v4 die Stimmungen stärker um.
 
@@ -15,324 +18,324 @@ Wichtig: Nichts umstellen oder weglassen – die Zuordnung erfolgt über die Rei
 
 TEIL 1 von 5  (32 Sätze)
 ------------------------------------------------------------
-null [long pause]
+[with a strong Berlin accent] null [long pause]
 
-eens [long pause]
+[with a strong Berlin accent] eens [long pause]
 
-zwee [long pause]
+[with a strong Berlin accent] zwee [long pause]
 
-drei [long pause]
+[with a strong Berlin accent] drei [long pause]
 
-vier [long pause]
+[with a strong Berlin accent] vier [long pause]
 
-fünf [long pause]
+[with a strong Berlin accent] fünf [long pause]
 
-sechs [long pause]
+[with a strong Berlin accent] sechs [long pause]
 
-siebn [long pause]
+[with a strong Berlin accent] siebn [long pause]
 
-acht [long pause]
+[with a strong Berlin accent] acht [long pause]
 
-neun [long pause]
+[with a strong Berlin accent] neun [long pause]
 
-zehn [long pause]
+[with a strong Berlin accent] zehn [long pause]
 
-elf [long pause]
+[with a strong Berlin accent] elf [long pause]
 
-zwölf [long pause]
+[with a strong Berlin accent] zwölf [long pause]
 
-dreizehn [long pause]
+[with a strong Berlin accent] dreizehn [long pause]
 
-vierzehn [long pause]
+[with a strong Berlin accent] vierzehn [long pause]
 
-fuffzehn [long pause]
+[with a strong Berlin accent] fuffzehn [long pause]
 
-sechzehn [long pause]
+[with a strong Berlin accent] sechzehn [long pause]
 
-siebzehn [long pause]
+[with a strong Berlin accent] siebzehn [long pause]
 
-achtzehn [long pause]
+[with a strong Berlin accent] achtzehn [long pause]
 
-neunzehn [long pause]
+[with a strong Berlin accent] neunzehn [long pause]
 
-zwanzig [long pause]
+[with a strong Berlin accent] zwanzig [long pause]
 
-eenundzwanzig [long pause]
+[with a strong Berlin accent] eenundzwanzig [long pause]
 
-zweeundzwanzig [long pause]
+[with a strong Berlin accent] zweeundzwanzig [long pause]
 
-dreiundzwanzig [long pause]
+[with a strong Berlin accent] dreiundzwanzig [long pause]
 
-vierundzwanzig [long pause]
+[with a strong Berlin accent] vierundzwanzig [long pause]
 
-fünfundzwanzig [long pause]
+[with a strong Berlin accent] fünfundzwanzig [long pause]
 
-sechsundzwanzig [long pause]
+[with a strong Berlin accent] sechsundzwanzig [long pause]
 
-siebnundzwanzig [long pause]
+[with a strong Berlin accent] siebnundzwanzig [long pause]
 
-achtundzwanzig [long pause]
+[with a strong Berlin accent] achtundzwanzig [long pause]
 
-neunundzwanzig [long pause]
+[with a strong Berlin accent] neunundzwanzig [long pause]
 
-dreißig [long pause]
+[with a strong Berlin accent] dreißig [long pause]
 
-eenunddreißig [long pause]
+[with a strong Berlin accent] eenunddreißig [long pause]
 ------------------------------------------------------------
 
 TEIL 2 von 5  (32 Sätze)
 ------------------------------------------------------------
-zweeunddreißig [long pause]
+[with a strong Berlin accent] zweeunddreißig [long pause]
 
-dreiunddreißig [long pause]
+[with a strong Berlin accent] dreiunddreißig [long pause]
 
-vierunddreißig [long pause]
+[with a strong Berlin accent] vierunddreißig [long pause]
 
-fünfunddreißig [long pause]
+[with a strong Berlin accent] fünfunddreißig [long pause]
 
-sechsunddreißig [long pause]
+[with a strong Berlin accent] sechsunddreißig [long pause]
 
-siebnunddreißig [long pause]
+[with a strong Berlin accent] siebnunddreißig [long pause]
 
-achtunddreißig [long pause]
+[with a strong Berlin accent] achtunddreißig [long pause]
 
-neununddreißig [long pause]
+[with a strong Berlin accent] neununddreißig [long pause]
 
-vierzig [long pause]
+[with a strong Berlin accent] vierzig [long pause]
 
-eenundvierzig [long pause]
+[with a strong Berlin accent] eenundvierzig [long pause]
 
-zweeundvierzig [long pause]
+[with a strong Berlin accent] zweeundvierzig [long pause]
 
-dreiundvierzig [long pause]
+[with a strong Berlin accent] dreiundvierzig [long pause]
 
-vierundvierzig [long pause]
+[with a strong Berlin accent] vierundvierzig [long pause]
 
-fünfundvierzig [long pause]
+[with a strong Berlin accent] fünfundvierzig [long pause]
 
-sechsundvierzig [long pause]
+[with a strong Berlin accent] sechsundvierzig [long pause]
 
-siebnundvierzig [long pause]
+[with a strong Berlin accent] siebnundvierzig [long pause]
 
-achtundvierzig [long pause]
+[with a strong Berlin accent] achtundvierzig [long pause]
 
-neunundvierzig [long pause]
+[with a strong Berlin accent] neunundvierzig [long pause]
 
-fuffzig [long pause]
+[with a strong Berlin accent] fuffzig [long pause]
 
-eenundfuffzig [long pause]
+[with a strong Berlin accent] eenundfuffzig [long pause]
 
-zweeundfuffzig [long pause]
+[with a strong Berlin accent] zweeundfuffzig [long pause]
 
-dreiundfuffzig [long pause]
+[with a strong Berlin accent] dreiundfuffzig [long pause]
 
-vierundfuffzig [long pause]
+[with a strong Berlin accent] vierundfuffzig [long pause]
 
-fünfundfuffzig [long pause]
+[with a strong Berlin accent] fünfundfuffzig [long pause]
 
-sechsundfuffzig [long pause]
+[with a strong Berlin accent] sechsundfuffzig [long pause]
 
-siebnundfuffzig [long pause]
+[with a strong Berlin accent] siebnundfuffzig [long pause]
 
-achtundfuffzig [long pause]
+[with a strong Berlin accent] achtundfuffzig [long pause]
 
-neunundfuffzig [long pause]
+[with a strong Berlin accent] neunundfuffzig [long pause]
 
-een [long pause]
+[with a strong Berlin accent] een [long pause]
 
-eene [long pause]
+[with a strong Berlin accent] eene [long pause]
 
-hundert [long pause]
+[with a strong Berlin accent] hundert [long pause]
 
-zweehundert [long pause]
+[with a strong Berlin accent] zweehundert [long pause]
 ------------------------------------------------------------
 
 TEIL 3 von 5  (32 Sätze)
 ------------------------------------------------------------
-dreihundert [long pause]
+[with a strong Berlin accent] dreihundert [long pause]
 
-vierhundert [long pause]
+[with a strong Berlin accent] vierhundert [long pause]
 
-fünfhundert [long pause]
+[with a strong Berlin accent] fünfhundert [long pause]
 
-sechshundert [long pause]
+[with a strong Berlin accent] sechshundert [long pause]
 
-siebnhundert [long pause]
+[with a strong Berlin accent] siebnhundert [long pause]
 
-achthundert [long pause]
+[with a strong Berlin accent] achthundert [long pause]
 
-neunhundert [long pause]
+[with a strong Berlin accent] neunhundert [long pause]
 
-tausend [long pause]
+[with a strong Berlin accent] tausend [long pause]
 
-zweetausend [long pause]
+[with a strong Berlin accent] zweetausend [long pause]
 
-dreitausend [long pause]
+[with a strong Berlin accent] dreitausend [long pause]
 
-viertausend [long pause]
+[with a strong Berlin accent] viertausend [long pause]
 
-fünftausend [long pause]
+[with a strong Berlin accent] fünftausend [long pause]
 
-sechstausend [long pause]
+[with a strong Berlin accent] sechstausend [long pause]
 
-siebntausend [long pause]
+[with a strong Berlin accent] siebntausend [long pause]
 
-achttausend [long pause]
+[with a strong Berlin accent] achttausend [long pause]
 
-neuntausend [long pause]
+[with a strong Berlin accent] neuntausend [long pause]
 
-von [long pause]
+[with a strong Berlin accent] von [long pause]
 
-Meta [long pause]
+[with a strong Berlin accent] Meta [long pause]
 
-Kilometa [long pause]
+[with a strong Berlin accent] Kilometa [long pause]
 
-Komma [long pause]
+[with a strong Berlin accent] Komma [long pause]
 
-Tempo [long pause]
+[with a strong Berlin accent] Tempo [long pause]
 
-Minuten [long pause]
+[with a strong Berlin accent] Minuten [long pause]
 
-Minute [long pause]
+[with a strong Berlin accent] Minute [long pause]
 
-Sekunden [long pause]
+[with a strong Berlin accent] Sekunden [long pause]
 
-pro Kilometa [long pause]
+[with a strong Berlin accent] pro Kilometa [long pause]
 
-Intervall [long pause]
+[with a strong Berlin accent] Intervall [long pause]
 
-Sprint [long pause]
+[with a strong Berlin accent] Sprint [long pause]
 
-Tempo [long pause]
+[with a strong Berlin accent] Tempo [long pause]
 
-Zieltempo [long pause]
+[with a strong Berlin accent] Zieltempo [long pause]
 
-Dauerloof [long pause]
+[with a strong Berlin accent] Dauerloof [long pause]
 
-Langa Loof [long pause]
+[with a strong Berlin accent] Langa Loof [long pause]
 
-[serious] Testloof, jetz jilt's. [long pause]
+[with a strong Berlin accent] [serious] Testloof, jetz jilt's. [long pause]
 ------------------------------------------------------------
 
 TEIL 4 von 5  (32 Sätze)
 ------------------------------------------------------------
-[grumpy] Na jut, denn mach ma. Los jeht's. [long pause]
+[with a strong Berlin accent] [cheeky] Na jut, denn mach ma. Los jeht's. [long pause]
 
-[sighs] Ooch, schon wieda loofen? Na denn, ab jeht's. [long pause]
+[with a strong Berlin accent] [sighs] Ooch, schon wieda loofen? Na denn, ab jeht's. [long pause]
 
-[grumpy] Na Antonia, denn mach ma. Los jeht's. [long pause]
+[with a strong Berlin accent] [cheeky] Na Antonia, denn mach ma. Los jeht's. [long pause]
 
-[sighs] Antonia, wat soll's. Ab jeht's. [long pause]
+[with a strong Berlin accent] [sighs] Antonia, wat soll's. Ab jeht's. [long pause]
 
-[bored] Uffwärmen, janz locker, keene Hektik. [long pause]
+[with a strong Berlin accent] [bored] Uffwärmen, janz locker, keene Hektik. [long pause]
 
-[relieved] Ausloofen, endlich, de Arbeit is jetan. [long pause]
+[with a strong Berlin accent] [relieved] Ausloofen, endlich, de Arbeit is jetan. [long pause]
 
-[sighs] Pause, ma durchschnaufen. [long pause]
+[with a strong Berlin accent] [sighs] Pause, ma durchschnaufen. [long pause]
 
-[grumpy] Pause, nu steh hier nich rum, trab locker. [long pause]
+[with a strong Berlin accent] [cheeky] Pause, nu steh hier nich rum, trab locker. [long pause]
 
-[sighs] Pause, Antonia, ma durchschnaufen. [long pause]
+[with a strong Berlin accent] [sighs] Pause, Antonia, ma durchschnaufen. [long pause]
 
-[grumpy] Letztet Intervall, jetz reiß dir ma zusamm. [long pause]
+[with a strong Berlin accent] [cheeky] Letztet Intervall, jetz reiß dir ma zusamm. [long pause]
 
-[grumpy] Letztet Intervall, Antonia, jetz reiß dir ma zusamm. [long pause]
+[with a strong Berlin accent] [cheeky] Letztet Intervall, Antonia, jetz reiß dir ma zusamm. [long pause]
 
-[annoyed] Noch hundert Meta, nu mach schon, jib Jas! [long pause]
+[with a strong Berlin accent] [annoyed] Noch hundert Meta, nu mach schon, jib Jas! [long pause]
 
-[deadpan] Hundert Meta noch, det schaffste ooch. [long pause]
+[with a strong Berlin accent] [deadpan] Hundert Meta noch, det schaffste ooch. [long pause]
 
-[annoyed] Noch hundert Meta, Antonia, jib Jas! [long pause]
+[with a strong Berlin accent] [annoyed] Noch hundert Meta, Antonia, jib Jas! [long pause]
 
-[bored] Noch zehn Sekunden, mach dir bereit. [long pause]
+[with a strong Berlin accent] [bored] Noch zehn Sekunden, mach dir bereit. [long pause]
 
-[annoyed] Mensch, schnella, det is doch keen Spaziergang. [long pause]
+[with a strong Berlin accent] [annoyed] Mensch, schnella, det is doch keen Spaziergang. [long pause]
 
-[grumpy] Wat trödelste so rum, jib Jas! [long pause]
+[with a strong Berlin accent] [cheeky] Wat trödelste so rum, jib Jas! [long pause]
 
-[sarcastic] Na, schläfste schon? Bisschen flotta, wa. [long pause]
+[with a strong Berlin accent] [sarcastic] Na, schläfste schon? Bisschen flotta, wa. [long pause]
 
-[annoyed] Antonia, wat is'n los? Schnella! [long pause]
+[with a strong Berlin accent] [annoyed] Antonia, wat is'n los? Schnella! [long pause]
 
-[annoyed] Langsam, wo willste denn hin? [long pause]
+[with a strong Berlin accent] [annoyed] Langsam, wo willste denn hin? [long pause]
 
-[grumpy] Nich so hetzen, Mensch. [long pause]
+[with a strong Berlin accent] [cheeky] Nich so hetzen, Mensch. [long pause]
 
-[sarcastic] Immer mit de Ruhe, det is keen Wettrenn. [long pause]
+[with a strong Berlin accent] [sarcastic] Immer mit de Ruhe, det is keen Wettrenn. [long pause]
 
-[grumpy] Antonia, nich so hetzen, langsama. [long pause]
+[with a strong Berlin accent] [cheeky] Antonia, nich so hetzen, langsama. [long pause]
 
-[grudging] Passt, kann man nich meckern. [long pause]
+[with a strong Berlin accent] [grudging] Passt, kann man nich meckern. [long pause]
 
-[deadpan] Jo, läuft. [long pause]
+[with a strong Berlin accent] [deadpan] Jo, läuft. [long pause]
 
-[grumpy] Allet im Lot, weita so. [long pause]
+[with a strong Berlin accent] [cheeky] Allet im Lot, weita so. [long pause]
 
-[grudging] Passt, Antonia, kann man nich meckern. [long pause]
+[with a strong Berlin accent] [grudging] Passt, Antonia, kann man nich meckern. [long pause]
 
-[relieved] Feierabend, dit Trainin is vorbei. [long pause]
+[with a strong Berlin accent] [relieved] Feierabend, dit Trainin is vorbei. [long pause]
 
-[grudging] Jut jemacht, ehrlich. [long pause]
+[with a strong Berlin accent] [grudging] Jut jemacht, ehrlich. [long pause]
 
-[deadpan] Na also, jeht doch. [long pause]
+[with a strong Berlin accent] [deadpan] Na also, jeht doch. [long pause]
 
-[grudging] Antonia, dit war stark, sach ick ja selten. [long pause]
+[with a strong Berlin accent] [grudging] Antonia, dit war stark, sach ick ja selten. [long pause]
 
-[grumpy] Jut jemacht, Antonia, jetz ab uff's Sofa. [long pause]
+[with a strong Berlin accent] [cheeky] Jut jemacht, Antonia, jetz ab uff's Sofa. [long pause]
 ------------------------------------------------------------
 
 TEIL 5 von 5  (26 Sätze)
 ------------------------------------------------------------
-[serious] Rennen läuft. Ruhig anjehen, nich gleich allet verheizen. [long pause]
+[with a strong Berlin accent] [serious] Rennen läuft. Ruhig anjehen, nich gleich allet verheizen. [long pause]
 
-[grumpy] Na denn, Rennen. Und bloß nich zu schnell loslaufen, wa. [long pause]
+[with a strong Berlin accent] [cheeky] Na denn, Rennen. Und bloß nich zu schnell loslaufen, wa. [long pause]
 
-[serious] Antonia, Rennen läuft. Ruhig anjehen, nich gleich allet verheizen. [long pause]
+[with a strong Berlin accent] [serious] Antonia, Rennen läuft. Ruhig anjehen, nich gleich allet verheizen. [long pause]
 
-[annoyed] Zu schnell! Nimm ma Tempo raus, det rächt sich hinten raus. [long pause]
+[with a strong Berlin accent] [annoyed] Zu schnell! Nimm ma Tempo raus, det rächt sich hinten raus. [long pause]
 
-[grumpy] Langsam, Mensch! Det Rennen wird hinten entschieden. [long pause]
+[with a strong Berlin accent] [cheeky] Langsam, Mensch! Det Rennen wird hinten entschieden. [long pause]
 
-[annoyed] Antonia, zu schnell! Nimm ma Tempo raus. [long pause]
+[with a strong Berlin accent] [annoyed] Antonia, zu schnell! Nimm ma Tempo raus. [long pause]
 
-[annoyed] Du verlierst Zeit, bisschen Jas jeben. [long pause]
+[with a strong Berlin accent] [annoyed] Du verlierst Zeit, bisschen Jas jeben. [long pause]
 
-[annoyed] Antonia, du verlierst Zeit, bisschen Jas jeben. [long pause]
+[with a strong Berlin accent] [annoyed] Antonia, du verlierst Zeit, bisschen Jas jeben. [long pause]
 
-vor'm Plan. [long pause]
+[with a strong Berlin accent] vor'm Plan. [long pause]
 
-hinter'm Plan. [long pause]
+[with a strong Berlin accent] hinter'm Plan. [long pause]
 
-[grudging] Jenau im Plan, kann man nich meckern. [long pause]
+[with a strong Berlin accent] [grudging] Jenau im Plan, kann man nich meckern. [long pause]
 
-[deadpan] Im Plan, weita so. [long pause]
+[with a strong Berlin accent] [deadpan] Im Plan, weita so. [long pause]
 
-[grudging] Antonia, jenau im Plan. [long pause]
+[with a strong Berlin accent] [grudging] Antonia, jenau im Plan. [long pause]
 
-[serious] Halbzeit. [long pause]
+[with a strong Berlin accent] [serious] Halbzeit. [long pause]
 
-Hochjerechnet [long pause]
+[with a strong Berlin accent] Hochjerechnet [long pause]
 
-[annoyed] Letzta Kilometa! Jetz raushauen, wat noch drin is! [long pause]
+[with a strong Berlin accent] [annoyed] Letzta Kilometa! Jetz raushauen, wat noch drin is! [long pause]
 
-[annoyed] Letzta Kilometa, Antonia! Jetz raushauen, wat noch drin is! [long pause]
+[with a strong Berlin accent] [annoyed] Letzta Kilometa, Antonia! Jetz raushauen, wat noch drin is! [long pause]
 
-[relieved] Ziel! Dit wars. [long pause]
+[with a strong Berlin accent] [relieved] Ziel! Dit wars. [long pause]
 
-Endzeit [long pause]
+[with a strong Berlin accent] Endzeit [long pause]
 
-[grudging] Zielzeit jeknackt. Respekt, ehrlich. [long pause]
+[with a strong Berlin accent] [grudging] Zielzeit jeknackt. Respekt, ehrlich. [long pause]
 
-[deadpan] Unter Zielzeit. Na also, jeht doch. [long pause]
+[with a strong Berlin accent] [deadpan] Unter Zielzeit. Na also, jeht doch. [long pause]
 
-[grudging] Antonia, Zielzeit jeknackt! Dit war richtig stark. [long pause]
+[with a strong Berlin accent] [grudging] Antonia, Zielzeit jeknackt! Dit war richtig stark. [long pause]
 
-[sighs] Knapp vorbei. Nächstet Mal, wa. [long pause]
+[with a strong Berlin accent] [sighs] Knapp vorbei. Nächstet Mal, wa. [long pause]
 
-[sighs] Knapp vorbei, Antonia. Nächstet Mal packste dit. [long pause]
+[with a strong Berlin accent] [sighs] Knapp vorbei, Antonia. Nächstet Mal packste dit. [long pause]
 
-Stunde [long pause]
+[with a strong Berlin accent] Stunde [long pause]
 
-Sekunde [long pause]
+[with a strong Berlin accent] Sekunde [long pause]
 ------------------------------------------------------------
 

@@ -43,9 +43,12 @@ write('elevenlabs-skript.txt',
 write('elevenlabs-skript-v4.txt',
       ['ElevenLabs-Skript für Eleven v4 / v3 (mit Audio-Tags)',
        '=====================================================', '',
-       'Die [Tags] in eckigen Klammern steuern die Stimmung (mürrisch, genervt, trocken …)',
-       'und werden nicht mitgesprochen. [long pause] sorgt für den Abstand zwischen den Sätzen.',
+       'Die [Tags] in eckigen Klammern werden nicht mitgesprochen:',
+       '  [with a strong Berlin accent]  lenkt das Modell Richtung Berlinerisch (klappt bei',
+       '                                 deutschen Dialekten noch nicht immer fehlerfrei)',
+       '  [cheeky], [deadpan], [annoyed] … die Stimmung: frech-schnoddrig, trocken, genervt …',
+       '  [long pause]                   der Abstand zwischen den Sätzen',
        'Tipp: Den Stabilitäts-Regler eher niedrig stellen ("Creative"), dann setzt',
        'v4 die Stimmungen stärker um.'] + COMMON,
-      lambda k, t: (f'[{mv.TAGS[k]}] ' if k in mv.TAGS else '') + t + ' [long pause]', '\n\n')
+      lambda k, t: f'[{mv.ACCENT}] ' + (f'[{mv.TAGS[k]}] ' if k in mv.TAGS else '') + t + ' [long pause]', '\n\n')
 print('ok')

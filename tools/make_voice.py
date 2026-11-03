@@ -109,20 +109,23 @@ CLIPS.update({
 })
 
 
-# Audio-Tags für Eleven v4/v3 (nur im ElevenLabs-Skript, Piper würde sie vorlesen)
+# Audio-Tags für Eleven v4/v3 (nur im ElevenLabs-Skript, Piper würde sie vorlesen).
+# ACCENT steht vor jeder Zeile, damit auch Zahlen und Einzelwörter berlinern;
+# danach höchstens eine Stimmung pro Spruch. "cheeky" = Berliner Schnauze: frech, schnoddrig.
+ACCENT = 'with a strong Berlin accent'
 TAGS = {
     'nm_test': 'serious',
-    'start_1': 'grumpy', 'start_2': 'sighs', 'astart_1': 'grumpy', 'astart_2': 'sighs',
+    'start_1': 'cheeky', 'start_2': 'sighs', 'astart_1': 'cheeky', 'astart_2': 'sighs',
     'warm_1': 'bored', 'cool_1': 'relieved',
-    'rest_1': 'sighs', 'rest_2': 'grumpy', 'arest_1': 'sighs',
-    'last_1': 'grumpy', 'alast_1': 'grumpy',
+    'rest_1': 'sighs', 'rest_2': 'cheeky', 'arest_1': 'sighs',
+    'last_1': 'cheeky', 'alast_1': 'cheeky',
     'h100_1': 'annoyed', 'h100_2': 'deadpan', 'ah100_1': 'annoyed', 't10_1': 'bored',
-    'faster_1': 'annoyed', 'faster_2': 'grumpy', 'faster_3': 'sarcastic', 'afaster_1': 'annoyed',
-    'slower_1': 'annoyed', 'slower_2': 'grumpy', 'slower_3': 'sarcastic', 'aslower_1': 'grumpy',
-    'ok_1': 'grudging', 'ok_2': 'deadpan', 'ok_3': 'grumpy', 'aok_1': 'grudging',
-    'fin_1': 'relieved', 'end_1': 'grudging', 'end_2': 'deadpan', 'aend_1': 'grudging', 'aend_2': 'grumpy',
-    'rstart_1': 'serious', 'rstart_2': 'grumpy', 'arstart_1': 'serious',
-    'rfast_1': 'annoyed', 'rfast_2': 'grumpy', 'arfast_1': 'annoyed', 'rslow_1': 'annoyed', 'arslow_1': 'annoyed',
+    'faster_1': 'annoyed', 'faster_2': 'cheeky', 'faster_3': 'sarcastic', 'afaster_1': 'annoyed',
+    'slower_1': 'annoyed', 'slower_2': 'cheeky', 'slower_3': 'sarcastic', 'aslower_1': 'cheeky',
+    'ok_1': 'grudging', 'ok_2': 'deadpan', 'ok_3': 'cheeky', 'aok_1': 'grudging',
+    'fin_1': 'relieved', 'end_1': 'grudging', 'end_2': 'deadpan', 'aend_1': 'grudging', 'aend_2': 'cheeky',
+    'rstart_1': 'serious', 'rstart_2': 'cheeky', 'arstart_1': 'serious',
+    'rfast_1': 'annoyed', 'rfast_2': 'cheeky', 'arfast_1': 'annoyed', 'rslow_1': 'annoyed', 'arslow_1': 'annoyed',
     'ron_1': 'grudging', 'ron_2': 'deadpan', 'aron_1': 'grudging', 'rhalf_1': 'serious',
     'rlast_1': 'annoyed', 'arlast_1': 'annoyed', 'rfin_1': 'relieved',
     'rgood_1': 'grudging', 'rgood_2': 'deadpan', 'argood_1': 'grudging', 'rmiss_1': 'sighs', 'armiss_1': 'sighs',

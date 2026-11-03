@@ -1,0 +1,33 @@
+ElevenLabs-Skript für die Intervall-App (Berliner Stimme)
+========================================================
+
+So geht es:
+1. In ElevenLabs "Text to Speech" öffnen, Modell "Eleven Multilingual v2" wählen
+   (versteht die <break>-Pausen; Eleven v3 nicht).
+2. Deine Berliner Stimme auswählen und für ALLE 4 Teile gleich lassen
+   (gleiche Stimme, gleiche Einstellungen).
+3. Jeden Teil komplett (alles zwischen den Strichlinien) einfügen, erzeugen, als MP3 herunterladen.
+4. Dateien benennen: teil1.mp3, teil2.mp3, teil3.mp3, teil4.mp3 – und hochladen.
+
+Wichtig: Nichts umstellen oder weglassen – die App ordnet die Sätze anhand der Reihenfolge zu.
+Klingt ein einzelner Satz schief, den ganzen Teil einfach neu erzeugen.
+
+TEIL 1 von 4  (32 Sätze, 977 Zeichen)
+------------------------------------------------------------
+null <break time="1.5s" /> eens <break time="1.5s" /> zwee <break time="1.5s" /> drei <break time="1.5s" /> vier <break time="1.5s" /> fünf <break time="1.5s" /> sechs <break time="1.5s" /> siebn <break time="1.5s" /> acht <break time="1.5s" /> neun <break time="1.5s" /> zehn <break time="1.5s" /> elf <break time="1.5s" /> zwölf <break time="1.5s" /> dreizehn <break time="1.5s" /> vierzehn <break time="1.5s" /> fuffzehn <break time="1.5s" /> sechzehn <break time="1.5s" /> siebzehn <break time="1.5s" /> achtzehn <break time="1.5s" /> neunzehn <break time="1.5s" /> zwanzig <break time="1.5s" /> eenundzwanzig <break time="1.5s" /> zweeundzwanzig <break time="1.5s" /> dreiundzwanzig <break time="1.5s" /> vierundzwanzig <break time="1.5s" /> fünfundzwanzig <break time="1.5s" /> sechsundzwanzig <break time="1.5s" /> siebnundzwanzig <break time="1.5s" /> achtundzwanzig <break time="1.5s" /> neunundzwanzig <break time="1.5s" /> dreißig <break time="1.5s" /> eenunddreißig
+------------------------------------------------------------
+
+TEIL 2 von 4  (32 Sätze, 1120 Zeichen)
+------------------------------------------------------------
+zweeunddreißig <break time="1.5s" /> dreiunddreißig <break time="1.5s" /> vierunddreißig <break time="1.5s" /> fünfunddreißig <break time="1.5s" /> sechsunddreißig <break time="1.5s" /> siebnunddreißig <break time="1.5s" /> achtunddreißig <break time="1.5s" /> neununddreißig <break time="1.5s" /> vierzig <break time="1.5s" /> eenundvierzig <break time="1.5s" /> zweeundvierzig <break time="1.5s" /> dreiundvierzig <break time="1.5s" /> vierundvierzig <break time="1.5s" /> fünfundvierzig <break time="1.5s" /> sechsundvierzig <break time="1.5s" /> siebnundvierzig <break time="1.5s" /> achtundvierzig <break time="1.5s" /> neunundvierzig <break time="1.5s" /> fuffzig <break time="1.5s" /> eenundfuffzig <break time="1.5s" /> zweeundfuffzig <break time="1.5s" /> dreiundfuffzig <break time="1.5s" /> vierundfuffzig <break time="1.5s" /> fünfundfuffzig <break time="1.5s" /> sechsundfuffzig <break time="1.5s" /> siebnundfuffzig <break time="1.5s" /> achtundfuffzig <break time="1.5s" /> neunundfuffzig <break time="1.5s" /> een <break time="1.5s" /> eene <break time="1.5s" /> hundert <break time="1.5s" /> zweehundert
+------------------------------------------------------------
+
+TEIL 3 von 4  (32 Sätze, 1017 Zeichen)
+------------------------------------------------------------
+dreihundert <break time="1.5s" /> vierhundert <break time="1.5s" /> fünfhundert <break time="1.5s" /> sechshundert <break time="1.5s" /> siebnhundert <break time="1.5s" /> achthundert <break time="1.5s" /> neunhundert <break time="1.5s" /> tausend <break time="1.5s" /> zweetausend <break time="1.5s" /> dreitausend <break time="1.5s" /> viertausend <break time="1.5s" /> fünftausend <break time="1.5s" /> sechstausend <break time="1.5s" /> siebntausend <break time="1.5s" /> achttausend <break time="1.5s" /> neuntausend <break time="1.5s" /> von <break time="1.5s" /> Meta <break time="1.5s" /> Kilometa <break time="1.5s" /> Komma <break time="1.5s" /> Tempo <break time="1.5s" /> Minuten <break time="1.5s" /> Minute <break time="1.5s" /> Sekunden <break time="1.5s" /> pro Kilometa <break time="1.5s" /> Intervall <break time="1.5s" /> Sprint <break time="1.5s" /> Tempo <break time="1.5s" /> Zieltempo <break time="1.5s" /> Dauerloof <break time="1.5s" /> Langa Loof <break time="1.5s" /> Testloof. Jetz jilt's!
+------------------------------------------------------------
+
+TEIL 4 von 4  (32 Sätze, 1728 Zeichen)
+------------------------------------------------------------
+Na, denn wolln wa ma! Los jeht's! <break time="1.5s" /> Uff jeht's, ab jeht's! <break time="1.5s" /> Na Antonia, denn wolln wa ma! Los jeht's! <break time="1.5s" /> Hallo Antonia! Uff jeht's, ab jeht's! <break time="1.5s" /> Uffwärmen. Janz locker einloofen. <break time="1.5s" /> Ausloofen. Schön locker, de Arbeit is jetan. <break time="1.5s" /> Pause. Ma schön durchschnaufen. <break time="1.5s" /> Pause. Kurz verschnaufen. <break time="1.5s" /> Pause, Antonia. Ma schön durchschnaufen. <break time="1.5s" /> Letztet Intervall! Jetz noch ma allet jeben! <break time="1.5s" /> Letztet Intervall, Antonia! Jetz noch ma allet jeben! <break time="1.5s" /> Noch hundert Meta! Jib Jas! <break time="1.5s" /> Noch hundert Meta! Endspurt, Keule! <break time="1.5s" /> Noch hundert Meta, Antonia! Jib Jas! <break time="1.5s" /> Noch zehn Sekunden. Mach dir bereit! <break time="1.5s" /> Etwas schnella! Det jeht noch! <break time="1.5s" /> Mehr Jas, nich trödeln! <break time="1.5s" /> Hopp hopp, bisschen flotta! <break time="1.5s" /> Antonia, bisschen schnella! Det jeht noch! <break time="1.5s" /> Etwas langsama! Nich so hetzen! <break time="1.5s" /> Immer mit de Ruhe, wa! <break time="1.5s" /> Nu ma langsam mit de jungen Pferde! <break time="1.5s" /> Antonia, nich so hetzen! Etwas langsama! <break time="1.5s" /> Passt. Allet jut! <break time="1.5s" /> Läuft wie jeschmiert! <break time="1.5s" /> Allet im Lot, weita so! <break time="1.5s" /> Passt, Antonia. Allet jut! <break time="1.5s" /> Feierabend! Dit Trainin is vorbei. <break time="1.5s" /> Jut jemacht! <break time="1.5s" /> Dit war stark, Keule! <break time="1.5s" /> Jut jemacht, Antonia! Dit war stark! <break time="1.5s" /> Super, Antonia! Ick bin stolz uff dir!
+------------------------------------------------------------

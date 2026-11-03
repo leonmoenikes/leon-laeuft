@@ -372,7 +372,7 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
     <label class="cell"><span class="l">Pace-Hinweise</span><input class="sw" type="checkbox" id="s-hints" onchange="settings.hints=this.checked;saveSettings()"></label>
   </div>
   <p class="foot">Der Musik-Modus ersetzt die Sprache durch Tonmuster, damit Spotify ungestört weiterläuft: Intervall = 1 langer hoher Ton · Pause = 2 tiefe Töne · Warm-/Cool-down = 1 mittlerer Ton · 100 m vor Ziel = 2 kurze hohe Töne · schneller laufen = 2 aufsteigende Töne · langsamer laufen = 2 absteigende Töne · Ende = 3 aufsteigende Töne. Der Klingel-Schalter muss auf laut stehen.</p>
-  <p class="foot">Berliner Stimme: Thorsten berlinert über deine Musik, ohne sie anzuhalten (Musik-Modus dafür ausschalten). Ohne Berliner Stimme spricht die iPhone-Stimme – die pausiert Spotify leider. Das Sprechtempo gilt nur für die iPhone-Stimme.</p>
+  <p class="foot">Berliner Stimme: Die Ansagen mit Berliner Schnauze liegen über deiner Musik, ohne sie anzuhalten (Musik-Modus dafür ausschalten). Ohne Berliner Stimme spricht die iPhone-Stimme – die pausiert Spotify leider. Das Sprechtempo gilt nur für die iPhone-Stimme.</p>
   <div class="head">Tastensperre</div>
   <div class="group">
     <label class="cell"><span class="l">Gesperrt starten</span><input class="sw" type="checkbox" id="s-startlock" onchange="settings.startLocked=this.checked;saveSettings()"></label>
@@ -385,7 +385,7 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
     <label class="cell rangecell"><span class="l">Lautstärke Stimme (Berliner)</span><input type="range" id="s-vboost" min="1" max="2.6" step="0.1" oninput="settings.vboost=+this.value;saveSettings()"></label>
     <label class="cell rangecell"><span class="l">Sprechtempo (iPhone-Stimme)</span><input type="range" id="s-rate" min="0.7" max="1.3" step="0.1" oninput="settings.rate=+this.value;saveSettings()"></label>
   </div>
-  <p class="foot">Die Musik absenken kann eine Web-App leider nicht. Tipp: In Spotify unter Einstellungen → Wiedergabe „Lautstärke normalisieren“ einschalten und das Niveau auf „Leise“ stellen – dann ist Thorsten im Verhältnis deutlich besser zu hören.</p>
+  <p class="foot">Die Musik absenken kann eine Web-App leider nicht. Tipp: In Spotify unter Einstellungen → Wiedergabe „Lautstärke normalisieren“ einschalten und das Niveau auf „Leise“ stellen – dann ist die Stimme im Verhältnis deutlich besser zu hören.</p>
   <div class="head">GPS</div>
   <div class="group">
     <label class="cell"><span class="l">Distanz-Korrektur (%)</span><input type="number" inputmode="decimal" id="s-corr" step="0.5" oninput="settings.corr=parseFloat(this.value)||0;saveSettings()"></label>
@@ -550,7 +550,7 @@ function unlockAudio(){
 }
 
 /* ---------- Berliner Stimme ----------
-   Vorab erzeugte Sprach-Bausteine (voice.js, siehe tools/make_voice.py),
+   Vorab erzeugte Sprach-Bausteine (voice.js – ElevenLabs-Aufnahmen, importiert mit tools/import_elevenlabs.py),
    abgespielt über Web Audio – genau wie die Töne. Dadurch liegt die Stimme
    über der Musik, statt sie (wie die iOS-Sprachausgabe) zu pausieren. */
 const VB={buf:{},keys:[],ready:false,p:null,end:0};

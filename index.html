@@ -12,6 +12,7 @@
 <meta name="color-scheme" content="light dark">
 <link rel="apple-touch-icon" id="icon">
 <title>Intervall-Lauf</title>
+<script src="voice.js"></script>
 <script>
 // App-Icon zur Laufzeit erzeugen (für "Zum Home-Bildschirm")
 (function(){
@@ -367,9 +368,11 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
     <label class="cell"><span class="l">Musik-Modus (Töne statt Sprache)</span><input class="sw" type="checkbox" id="s-music" onchange="settings.musicMode=this.checked;saveSettings()"></label>
     <label class="cell"><span class="l">Signalton</span><input class="sw" type="checkbox" id="s-beep" onchange="settings.beep=this.checked;saveSettings()"></label>
     <label class="cell"><span class="l">Sprachansagen</span><input class="sw" type="checkbox" id="s-voice" onchange="settings.voice=this.checked;saveSettings()"></label>
+    <label class="cell"><span class="l">Berliner Stimme</span><input class="sw" type="checkbox" id="s-berlin" onchange="settings.berlin=this.checked;saveSettings()"></label>
     <label class="cell"><span class="l">Pace-Hinweise</span><input class="sw" type="checkbox" id="s-hints" onchange="settings.hints=this.checked;saveSettings()"></label>
   </div>
   <p class="foot">Der Musik-Modus ersetzt die Sprache durch Tonmuster, damit Spotify ungestört weiterläuft: Intervall = 1 langer hoher Ton · Pause = 2 tiefe Töne · Warm-/Cool-down = 1 mittlerer Ton · 100 m vor Ziel = 2 kurze hohe Töne · schneller laufen = 2 aufsteigende Töne · langsamer laufen = 2 absteigende Töne · Ende = 3 aufsteigende Töne. Der Klingel-Schalter muss auf laut stehen.</p>
+  <p class="foot">Berliner Stimme: Thorsten berlinert über deine Musik, ohne sie anzuhalten (Musik-Modus dafür ausschalten). Ohne Berliner Stimme spricht die iPhone-Stimme – die pausiert Spotify leider. Das Sprechtempo gilt nur für die iPhone-Stimme.</p>
   <div class="head">Tastensperre</div>
   <div class="group">
     <label class="cell"><span class="l">Gesperrt starten</span><input class="sw" type="checkbox" id="s-startlock" onchange="settings.startLocked=this.checked;saveSettings()"></label>
@@ -418,7 +421,7 @@ function fmtDate(iso){return new Date(iso).toLocaleString('de-DE',{day:'2-digit'
 function defaultPlan(){return {id:'p'+Date.now(),name:'5 × 1000 m',warm:10,cool:5,sets:[{reps:5,dist:1000,pace:240,rest:120}]}}
 let plans=LS.get('iv_plans',null)||[defaultPlan()];
 let history=LS.get('iv_hist',[]);
-let settings=Object.assign({beep:true,voice:true,hints:true,volume:0.8,rate:1,corr:0,startLocked:true,autoLock:true,musicMode:true,kalman:true,doppler:true},LS.get('iv_settings',{}));
+let settings=Object.assign({beep:true,voice:true,hints:true,volume:0.8,rate:1,corr:0,startLocked:true,autoLock:true,musicMode:true,kalman:true,doppler:true,berlin:true},LS.get('iv_settings',{}));
 const savePlans=()=>LS.set('iv_plans',plans);
 const saveHist=()=>LS.set('iv_hist',history);
 function saveSettings(){LS.set('iv_settings',settings)}
@@ -532,11 +535,70 @@ function audioOn(){
   }catch(e){}
   return !!ac;
 }
-function audioIdle(sec){clearTimeout(acIdle);acIdle=setTimeout(()=>{try{if(ac&&ac.state==='running')ac.suspend()}catch(e){}},sec*1000+500)}
+// Anhalten erst, wenn alles Geplante (Töne + Sprache) fertig ist
+let acUntil=0;
+function audioIdle(sec){
+  if(!ac)return;acUntil=Math.max(acUntil,ac.currentTime+sec);clearTimeout(acIdle);
+  acIdle=setTimeout(()=>{try{if(!ac||ac.state!=='running')return;if(ac.currentTime>=acUntil-0.05)ac.suspend();else audioIdle(0)}catch(e){}},(acUntil-ac.currentTime)*1000+500);
+}
 function unlockAudio(){
   if(audioOn()){try{const o=ac.createOscillator(),g=ac.createGain();g.gain.value=0.0001;o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+0.05)}catch(e){}audioIdle(0.1)}
-  if(!settings.musicMode&&settings.voice){try{const u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u)}catch(e){}}
+  if(berlinOn())loadVoice();
+  else if(!settings.musicMode&&settings.voice){try{const u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u)}catch(e){}}
 }
+
+/* ---------- Berliner Stimme ----------
+   Vorab erzeugte Sprach-Bausteine (voice.js, siehe tools/make_voice.py),
+   abgespielt über Web Audio – genau wie die Töne. Dadurch liegt die Stimme
+   über der Musik, statt sie (wie die iOS-Sprachausgabe) zu pausieren. */
+const VB={buf:{},keys:[],ready:false,p:null,end:0};
+const berlinOn=()=>settings.voice&&!settings.musicMode&&settings.berlin&&!!window.VOICE_BERLIN;
+function loadVoice(){
+  if(VB.p||!window.VOICE_BERLIN||!audioOn())return VB.p;
+  const dec=b64=>new Promise(res=>{try{const s=atob(b64),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);
+    ac.decodeAudioData(u.buffer,res,()=>res(null))}catch(e){res(null)}});
+  VB.p=Promise.all(Object.entries(VOICE_BERLIN).map(([k,v])=>dec(v).then(b=>{if(b)VB.buf[k]=b}))).then(()=>{VB.keys=Object.keys(VB.buf);VB.ready=VB.keys.length>0});
+  return VB.p;
+}
+// "@name": zufällige Variante (name_1, name_2 …); im Antonia-Modus bevorzugt die Varianten mit Namen (aname_…)
+function clipKey(k,antonia){
+  if(k[0]!=='@')return k;k=k.slice(1);
+  const reg=VB.keys.filter(x=>x.startsWith(k+'_')),ant=VB.keys.filter(x=>x.startsWith('a'+k+'_'));
+  const pool=(antonia&&ant.length&&(['start','end'].includes(k)||Math.random()<.6||!reg.length))?ant:reg;
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+// Spielt Bausteine nacheinander; reiht sich hinter laufende Ansagen ein. low: entfällt, wenn gerade gesprochen wird.
+async function say(tokens,low=false,antonia=!!(R&&R.sess)){
+  if(VB.p)await VB.p;
+  if(!VB.ready||!audioOn())return;
+  const now=ac.currentTime;
+  if(low&&ac.state==='running'&&VB.end>now+0.05)return; // angehaltener Kontext = es wird gerade nichts gesprochen
+  let t=Math.max(now+0.08,VB.end+0.25);const v=settings.volume;
+  for(const tk of tokens){
+    if(tk==='#beep'){if(settings.beep){const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=1320;
+        g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+0.01);g.gain.setValueAtTime(v,t+0.32);g.gain.linearRampToValueAtTime(0,t+0.35);
+        o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+0.37);t+=0.5}continue}
+    const b=VB.buf[clipKey(tk,antonia)];if(!b)continue;
+    const s=ac.createBufferSource(),g=ac.createGain();s.buffer=b;g.gain.value=Math.min(1,v*1.15);s.connect(g);g.connect(ac.destination);s.start(t);
+    t+=b.duration+0.07;
+  }
+  VB.end=t;audioIdle(t-ac.currentTime);
+}
+// Bausteine für Zahlen, Distanzen, Zeiten und Tempo
+const TK={
+  n:x=>'n'+Math.max(0,Math.min(59,Math.round(x))),
+  dur(s){s=Math.round(s);const m=Math.floor(s/60),r=s%60;return m?[m===1?'eene':TK.n(m),m===1?'minute':'minuten',...(r?[TK.n(r)]:[])]:[TK.n(r),'sekunden']},
+  km(m){const k=Math.round(m/100)/10,i=Math.floor(k),d=Math.round((k-i)*10);return [i===1&&!d?'een':TK.n(i),...(d?['komma',TK.n(d)]:[]),'km']},
+  dist(m){m=Math.round(m/50)*50;
+    if(m>=1000&&m%1000===0)return [m===1000?'een':TK.n(m/1000),'km'];
+    if(m>=10000)return TK.km(m);
+    const th=Math.floor(m/1000),h=Math.floor(m%1000/100),r=m%100;
+    return [...(th?['t'+th]:[]),...(h?['h'+h]:[]),...(r?[TK.n(r)]:[]),'meta']},
+  pace(p,full){let m=Math.floor(p/60),r=Math.round(p%60);if(r===60){m++;r=0}return ['tempo',TK.n(m),r?TK.n(r):'minuten',...(full?['prokm']:[])]},
+  nm:n=>({'Intervall':'nm_iv','Sprint':'nm_sprint','Tempo':'nm_tempo','Zieltempo':'nm_ziel','Dauerlauf':'nm_dauer','Langer Lauf':'nm_lang','Testlauf':'nm_test'})[n]||'nm_iv'
+};
+// Ansage: Berliner Stimme (tokens) oder iPhone-Stimme (text)
+function talk(text,tokens,low=false){if(berlinOn()&&tokens)say(tokens,low);else speak(text,0,low)}
 function tone(list){ // list: [[Frequenz Hz, Dauer s], …]
   if(!settings.beep||!audioOn())return;
   try{let t=ac.currentTime+0.03;const t0=t,v=settings.volume;
@@ -565,14 +627,16 @@ function speak(text,delay=0,low=false){
     speechSynthesis.speak(u)}catch(e){}},delay);
 }
 // Ansage: Musik-Modus -> Tonmuster, sonst Signalton + Sprache
-function cue(k,text,withBeep){
+function cue(k,text,withBeep,tokens){
   if(settings.musicMode){playPattern(k);return}
+  if(berlinOn()&&tokens){say(withBeep?['#beep',...tokens]:tokens);return}
   if(withBeep)beep(1320,0.35);
   if(text)speak(text,withBeep?400:0);
 }
 function testAudio(){
   unlockAudio();
   if(settings.musicMode){['run','rest','faster','slower','end'].forEach((k,n)=>setTimeout(()=>playPattern(k),n*1300))}
+  else if(berlinOn())say(['#beep','nm_iv','n1','von','n5',...TK.dist(1000),...TK.pace(240,true),'@h100','@ok']);
   else{beep(1320,0.35);speak('Intervall 1 von 5. 1000 Meter. Pace 4 Minuten pro Kilometer.',400)}
 }
 const spDist=m=>(m>=1000&&m%1000===0)?`${m/1000} Kilometer`:`${m} Meter`;
@@ -695,6 +759,7 @@ function curPace(){
 function go(){
   unlockAudio();R.state='run';R.last=performance.now();R.lastTouch=performance.now();
   $('#runwait').hidden=true;$('#runlive').hidden=false;
+  if(berlinOn())say(['@start']);
   requestWake();enterStep(0);R.timer=setInterval(tick,250);
   if(settings.startLocked)setLocked(true);
 }
@@ -706,7 +771,10 @@ function enterStep(i){
   else if(s.type==='run')t=`${s.total>1?`${s.nm} ${s.n} von ${s.total}`:s.nm}. ${spDist(s.dist)}. Pace ${spPace(s.pace)}.`;
   else if(s.type==='rest')t=`Pause. ${spDur(s.dur)}.`;
   else t=`Cool-down. ${spDur(s.dur)}.`;
-  cue(s.type,t,true);paint();
+  let tk;
+  if(s.type==='run')tk=[...(s.total>1?(s.n===s.total?['@last']:[TK.nm(s.nm),TK.n(s.n),'von',TK.n(s.total)]):[TK.nm(s.nm)]),...TK.dist(s.dist),...TK.pace(s.pace,true)];
+  else tk=['@'+s.type,...TK.dur(s.dur)];
+  cue(s.type,t,true,tk);paint();
 }
 function logStep(){
   const s=R.steps[R.i];
@@ -735,7 +803,7 @@ function tick(){
   if(s.type==='run'){
     const rem=s.dist-R.stepDist;
     if(rem<=0){next();return}
-    if(rem<=100&&s.dist>=300&&!R.flags.h100){R.flags.h100=1;cue('h100','Noch 100 Meter')}
+    if(rem<=100&&s.dist>=300&&!R.flags.h100){R.flags.h100=1;cue('h100','Noch 100 Meter',false,['@h100'])}
     if(settings.hints&&(settings.voice||settings.musicMode)){
       // Lockere Läufe (tol): Hinweis nur jeden Kilometer und mit größerer Toleranz
       const he=s.tol?1000:250,th=s.tol?s.tol+5:10;
@@ -743,14 +811,15 @@ function tick(){
       if(cp>=1&&cp!==R.flags.cp&&rem>120){R.flags.cp=cp;const p=curPace();
         if(p){const d=p-s.pace,pv=spPace(p).replace(' pro Kilometer',''),pre=s.tol?`Kilometer ${cp}. `:'';
           if(settings.musicMode){if(d>th)cue('faster');else if(d<-th)cue('slower')}
-          else speak(pre+(d>th?`Pace ${pv}. Etwas schneller.`:d<-th?`Pace ${pv}. Etwas langsamer.`:s.tol?`Pace ${pv}. Passt.`:'Pace passt.'),0,true)}}
+          else talk(pre+(d>th?`Pace ${pv}. Etwas schneller.`:d<-th?`Pace ${pv}. Etwas langsamer.`:s.tol?`Pace ${pv}. Passt.`:'Pace passt.'),
+            [...(s.tol?['km',TK.n(cp)]:[]),...(d>th||d<-th||s.tol?TK.pace(p):[]),d>th?'@faster':d<-th?'@slower':'@ok'],true)}}
     }
   }else{
     const rem=s.dur-R.stepTime;
     if(rem<=0){next();return}
     const c=Math.ceil(rem);
     if(c<=3&&R.flags.cnt!==c){R.flags.cnt=c;beep(880,0.15)}
-    if(s.type==='rest'&&s.dur>=20&&rem<=10&&!R.flags.t10){R.flags.t10=1;cue('t10','Noch 10 Sekunden')}
+    if(s.type==='rest'&&s.dur>=20&&rem<=10&&!R.flags.t10){R.flags.t10=1;cue('t10','Noch 10 Sekunden',false,['@t10'])}
   }
   paint();
 }
@@ -801,7 +870,9 @@ function paint(){
 function finish(early){
   if(early&&R.stepTime>3)logStep();
   stopSensors();R.state='done';setLocked(false);
-  if(settings.musicMode)playPattern('end');else{speak(`Training beendet. ${(R.totalDist/1000).toFixed(2).replace('.',' Komma ')} Kilometer.`);beep(1320,0.5)}
+  if(settings.musicMode)playPattern('end');
+  else if(berlinOn())say(['#beep','@fin',...TK.km(R.totalDist),'@end']);
+  else{speak(`Training beendet. ${(R.totalDist/1000).toFixed(2).replace('.',' Komma ')} Kilometer.`);beep(1320,0.5)}
   let id=null;
   if(R.total>=10){
     id='r'+Date.now();
@@ -1049,7 +1120,7 @@ async function exportHist(){
 
 /* ---------- Init ---------- */
 (function(){
-  $('#s-beep').checked=settings.beep;$('#s-music').checked=settings.musicMode;$('#s-kalman').checked=settings.kalman;$('#s-doppler').checked=settings.doppler;$('#s-voice').checked=settings.voice;$('#s-hints').checked=settings.hints;
+  $('#s-beep').checked=settings.beep;$('#s-music').checked=settings.musicMode;$('#s-kalman').checked=settings.kalman;$('#s-doppler').checked=settings.doppler;$('#s-voice').checked=settings.voice;$('#s-berlin').checked=settings.berlin;$('#s-hints').checked=settings.hints;
   $('#s-startlock').checked=settings.startLocked;$('#s-autolock').checked=settings.autoLock;
   $('#s-vol').value=settings.volume;$('#s-rate').value=settings.rate;$('#s-corr').value=settings.corr;
   try{pickVoice();speechSynthesis.addEventListener('voiceschanged',pickVoice)}catch(e){}

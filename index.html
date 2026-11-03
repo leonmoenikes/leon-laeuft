@@ -248,10 +248,12 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
   <div class="large">Einstellungen</div>
   <div class="head">Ansagen</div>
   <div class="group">
+    <label class="cell"><span class="l">Musik-Modus (Töne statt Sprache)</span><input class="sw" type="checkbox" id="s-music" onchange="settings.musicMode=this.checked;saveSettings()"></label>
     <label class="cell"><span class="l">Signalton</span><input class="sw" type="checkbox" id="s-beep" onchange="settings.beep=this.checked;saveSettings()"></label>
     <label class="cell"><span class="l">Sprachansagen</span><input class="sw" type="checkbox" id="s-voice" onchange="settings.voice=this.checked;saveSettings()"></label>
     <label class="cell"><span class="l">Pace-Hinweise</span><input class="sw" type="checkbox" id="s-hints" onchange="settings.hints=this.checked;saveSettings()"></label>
   </div>
+  <p class="foot">Der Musik-Modus ersetzt die Sprache durch Tonmuster, damit Spotify ungestört weiterläuft: Intervall = 1 langer hoher Ton · Pause = 2 tiefe Töne · Warm-/Cool-down = 1 mittlerer Ton · 100 m vor Ziel = 2 kurze hohe Töne · schneller laufen = 2 aufsteigende Töne · langsamer laufen = 2 absteigende Töne · Ende = 3 aufsteigende Töne. Der Klingel-Schalter muss auf laut stehen.</p>
   <div class="head">Tastensperre</div>
   <div class="group">
     <label class="cell"><span class="l">Gesperrt starten</span><input class="sw" type="checkbox" id="s-startlock" onchange="settings.startLocked=this.checked;saveSettings()"></label>
@@ -267,6 +269,11 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
   <div class="group">
     <label class="cell"><span class="l">Distanz-Korrektur (%)</span><input type="number" inputmode="decimal" id="s-corr" step="0.5" oninput="settings.corr=parseFloat(this.value)||0;saveSettings()"></label>
   </div>
+  <div class="group" style="margin-top:12px">
+    <label class="cell"><span class="l">Positions-Glättung</span><input class="sw" type="checkbox" id="s-kalman" onchange="settings.kalman=this.checked;saveSettings()"></label>
+    <label class="cell"><span class="l">Pace aus Doppler-Tempo</span><input class="sw" type="checkbox" id="s-doppler" onchange="settings.doppler=this.checked;saveSettings()"></label>
+  </div>
+  <p class="foot">Glättung: Kalman-Filter, der Messungen nach ihrer Genauigkeit gewichtet. Doppler-Tempo: ruhigere Pace-Anzeige aus der vom iPhone gemessenen Geschwindigkeit.</p>
   <p class="foot">GPS misst oft etwas zu lang. Ein negativer Wert (z. B. −1) korrigiert das.</p>
   <div style="margin-top:22px"><button class="btn fill" onclick="testAudio()">Ton &amp; Sprache testen</button></div>
   <p class="foot" style="margin-top:14px">Tipp: In Safari „Teilen → Zum Home-Bildschirm“ wählen und die App von dort starten. Trainings und Verlauf werden nur auf diesem Gerät gespeichert.</p>
@@ -294,7 +301,7 @@ function fmtDate(iso){return new Date(iso).toLocaleString('de-DE',{day:'2-digit'
 function defaultPlan(){return {id:'p'+Date.now(),name:'5 × 1000 m',warm:10,cool:5,sets:[{reps:5,dist:1000,pace:240,rest:120}]}}
 let plans=LS.get('iv_plans',null)||[defaultPlan()];
 let history=LS.get('iv_hist',[]);
-let settings=Object.assign({beep:true,voice:true,hints:true,volume:0.8,rate:1,corr:0,startLocked:true,autoLock:true},LS.get('iv_settings',{}));
+let settings=Object.assign({beep:true,voice:true,hints:true,volume:0.8,rate:1,corr:0,startLocked:true,autoLock:true,musicMode:true,kalman:true,doppler:true},LS.get('iv_settings',{}));
 const savePlans=()=>LS.set('iv_plans',plans);
 const saveHist=()=>LS.set('iv_hist',history);
 function saveSettings(){LS.set('iv_settings',settings)}
@@ -371,10 +378,12 @@ function delPlan(){if(confirm('Dieses Training löschen?')){plans=plans.filter(p
 
 /* ---------- Audio ---------- */
 let ac=null;
+function setAudioSession(){try{if(navigator.audioSession)navigator.audioSession.type='ambient'}catch(e){}}
 function unlockAudio(){
+  setAudioSession();
   try{if(!ac)ac=new(window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();
     const o=ac.createOscillator(),g=ac.createGain();g.gain.value=0.0001;o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+0.05)}catch(e){}
-  try{const u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u)}catch(e){}
+  if(!settings.musicMode){try{const u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u)}catch(e){}}
 }
 function beep(freq=880,dur=0.15){
   if(!settings.beep||!ac)return;
@@ -383,15 +392,35 @@ function beep(freq=880,dur=0.15){
     g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+0.01);g.gain.setValueAtTime(v,t+Math.max(0.02,dur-0.03));g.gain.linearRampToValueAtTime(0,t+dur);
     o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+dur+0.02)}catch(e){}
 }
+// Tonmuster (Musik-Modus): [Frequenz Hz, Dauer s]
+const PAT={run:[[1320,.5]],rest:[[660,.16],[660,.16]],warm:[[990,.3]],cool:[[990,.3]],h100:[[1320,.1],[1320,.1]],t10:[[880,.12]],
+  faster:[[880,.16],[1175,.16]],slower:[[1175,.16],[880,.16]],end:[[880,.15],[1047,.15],[1319,.35]]};
+function playPattern(k){
+  if(!settings.beep||!ac||!PAT[k])return;
+  try{let t=ac.currentTime+0.02;const v=settings.volume;
+    PAT[k].forEach(([f,d])=>{const o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.value=f;
+      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+0.01);g.gain.setValueAtTime(v,t+Math.max(0.02,d-0.03));g.gain.linearRampToValueAtTime(0,t+d);
+      o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+d+0.02);t+=d+0.09})}catch(e){}
+}
 function speak(text,delay=0){
-  if(!settings.voice||!('speechSynthesis' in window))return;
+  if(settings.musicMode||!settings.voice||!('speechSynthesis' in window))return;
   setTimeout(()=>{try{
     if(speechSynthesis.speaking)speechSynthesis.cancel();
     const u=new SpeechSynthesisUtterance(text);u.lang='de-DE';u.rate=settings.rate;u.volume=settings.volume;
     const v=speechSynthesis.getVoices().find(v=>v.lang&&v.lang.toLowerCase().startsWith('de'));if(v)u.voice=v;
     speechSynthesis.speak(u)}catch(e){}},delay);
 }
-function testAudio(){unlockAudio();beep(1320,0.35);speak('Intervall 1 von 5. 1000 Meter. Pace 4 Minuten pro Kilometer.',400)}
+// Ansage: Musik-Modus -> Tonmuster, sonst Signalton + Sprache
+function cue(k,text,withBeep){
+  if(settings.musicMode){playPattern(k);return}
+  if(withBeep)beep(1320,0.35);
+  if(text)speak(text,withBeep?400:0);
+}
+function testAudio(){
+  unlockAudio();
+  if(settings.musicMode){['run','rest','faster','slower','end'].forEach((k,n)=>setTimeout(()=>playPattern(k),n*1300))}
+  else{beep(1320,0.35);speak('Intervall 1 von 5. 1000 Meter. Pace 4 Minuten pro Kilometer.',400)}
+}
 const spDist=m=>(m>=1000&&m%1000===0)?`${m/1000} Kilometer`:`${m} Meter`;
 const spPace=p=>{const m=Math.floor(p/60),s=Math.round(p%60);return `${m} Minuten${s?' '+s:''} pro Kilometer`};
 const spDur=s=>(s>=60&&s%60===0)?`${s/60} ${s/60===1?'Minute':'Minuten'}`:`${s} Sekunden`;
@@ -436,7 +465,7 @@ function hav(a,b){const r=Math.PI/180,R6=6371000,dLa=(b.lat-a.lat)*r,dLo=(b.lon-
 function startRun(id){
   const plan=plans.find(p=>p.id===id);if(!plan)return;
   if(!('geolocation' in navigator)){alert('Dieses Gerät bietet kein GPS im Browser.');return}
-  R={plan,steps:buildSteps(plan),state:'wait',i:0,stepTime:0,stepDist:0,total:0,totalDist:0,paused:false,locked:false,lastTouch:performance.now(),last:performance.now(),lastPt:null,win:[],log:[],started:new Date().toISOString(),acc:null,flags:{},err:null};
+  R={plan,steps:buildSteps(plan),state:'wait',i:0,stepTime:0,stepDist:0,total:0,totalDist:0,paused:false,locked:false,lastTouch:performance.now(),last:performance.now(),kf:null,lastF:null,skips:0,spd:null,spdT:0,win:[],log:[],started:new Date().toISOString(),acc:null,flags:{},err:null};
   $('#rtitle').textContent=plan.name;$('#runwait').hidden=false;$('#runlive').hidden=true;
   show('run');paintGps();
   R.watch=navigator.geolocation.watchPosition(onPos,onPosErr,{enableHighAccuracy:true,maximumAge:0,timeout:20000});
@@ -448,15 +477,38 @@ function onPosErr(e){if(!R)return;R.err=e.code===1?'Standort verweigert':'GPS-Fe
 function onPos(p){
   if(!R)return;R.err=null;
   const c=p.coords;R.acc=c.accuracy;paintGps();
+  const sp=(typeof c.speed==='number'&&isFinite(c.speed)&&c.speed>=0)?c.speed:null;
+  const tn=performance.now()/1000;
+  // Doppler-Geschwindigkeit glätten (Zeitkonstante 3 s)
+  if(R.state==='run'&&!R.paused&&sp!==null&&c.accuracy<=50){
+    const dt=R.spdT?tn-R.spdT:null;
+    if(R.spd==null||dt>8)R.spd=sp;else R.spd+=(1-Math.exp(-Math.max(dt,0.2)/3))*(sp-R.spd);
+    R.spdT=tn;
+  }
   if(c.accuracy>30)return;
-  const pt={lat:c.latitude,lon:c.longitude,t:p.timestamp};
-  if(!R.lastPt){R.lastPt=pt;return}
-  const dtp=(pt.t-R.lastPt.t)/1000;if(dtp<=0)return;
-  let d=hav(R.lastPt,pt);
-  if(d<1.5)return;
-  if(d/dtp>12)return;
-  d*=1+(settings.corr||0)/100;
-  R.lastPt=pt;
+  const t=p.timestamp/1000;
+  if(!R.kf){R.kf={lat0:c.latitude,lon0:c.longitude,mx:111320*Math.cos(c.latitude*Math.PI/180),x:0,y:0,v:c.accuracy*c.accuracy,t};R.lastF={x:0,y:0};R.skips=0;return}
+  const k=R.kf,dt=t-k.t;if(dt<=0)return;
+  const zx=(c.longitude-k.lon0)*k.mx,zy=(c.latitude-k.lat0)*111132;
+  const jump=Math.hypot(zx-k.x,zy-k.y);
+  if(jump/dt>12){ // Ausreißer; nach 5 in Folge Filter neu starten
+    if(++R.skips>=5){R.kf=null;R.skips=0}
+    return;
+  }
+  R.skips=0;
+  if(settings.kalman){
+    const hv=sp!==null&&sp>0.8&&typeof c.heading==='number'&&isFinite(c.heading)&&c.heading>=0;
+    let q=3.5;
+    if(hv){const h=c.heading*Math.PI/180;k.x+=sp*Math.sin(h)*dt;k.y+=sp*Math.cos(h)*dt;q=2}
+    k.v+=q*q*dt*dt;
+    const g=k.v/(k.v+c.accuracy*c.accuracy);
+    k.x+=g*(zx-k.x);k.y+=g*(zy-k.y);k.v*=(1-g);
+  }else{k.x=zx;k.y=zy}
+  k.t=t;
+  const step=Math.hypot(k.x-R.lastF.x,k.y-R.lastF.y);
+  if(step<(settings.kalman?0.8:1.5))return;
+  R.lastF={x:k.x,y:k.y};
+  const d=step*(1+(settings.corr||0)/100);
   if(R.state==='run'&&!R.paused){
     R.stepDist+=d;R.totalDist+=d;
     const now=performance.now()/1000;R.win.push({t:now,d:R.totalDist});
@@ -472,6 +524,7 @@ function paintGps(){
   $('#lgps').className='dot '+cls;
 }
 function curPace(){
+  if(settings.doppler&&R.spd!=null&&performance.now()/1000-R.spdT<6)return R.spd>0.6?1000/R.spd:null;
   const w=R.win;if(w.length<2)return null;
   const now=performance.now()/1000,last=w[w.length-1];if(now-last.t>8)return null;
   const first=w.find(x=>last.t-x.t<=15)||w[0];const dd=last.d-first.d,dt=last.t-first.t;
@@ -486,13 +539,13 @@ function go(){
 }
 function enterStep(i){
   R.i=i;R.stepTime=0;R.stepDist=0;R.flags={};
-  const s=R.steps[i];beep(1320,0.35);
+  const s=R.steps[i];
   let t='';
   if(s.type==='warm')t=`Warm-up. ${spDur(s.dur)}.`;
   else if(s.type==='run')t=`Intervall ${s.n} von ${s.total}. ${spDist(s.dist)}. Pace ${spPace(s.pace)}.`;
   else if(s.type==='rest')t=`Pause. ${spDur(s.dur)}.`;
   else t=`Cool-down. ${spDur(s.dur)}.`;
-  speak(t,400);paint();
+  cue(s.type,t,true);paint();
 }
 function logStep(){
   const s=R.steps[R.i];
@@ -501,7 +554,7 @@ function logStep(){
 function next(){logStep();if(R.i+1>=R.steps.length)finish(false);else enterStep(R.i+1)}
 function skipStep(){if(R&&R.state==='run'&&confirm('Abschnitt überspringen?'))next()}
 function togglePause(){
-  if(R.state!=='run')return;R.paused=!R.paused;R.win=[];R.lastPt=null;R.last=performance.now();
+  if(R.state!=='run')return;R.paused=!R.paused;R.win=[];R.kf=null;R.spd=null;R.last=performance.now();
   $('#rpause').textContent=R.paused?'Weiter':'Pause';paint();
 }
 function endEarly(){if(confirm('Training beenden und speichern?'))finish(true)}
@@ -516,18 +569,20 @@ function tick(){
   if(s.type==='run'){
     const rem=s.dist-R.stepDist;
     if(rem<=0){next();return}
-    if(rem<=100&&s.dist>=300&&!R.flags.h100){R.flags.h100=1;speak('Noch 100 Meter')}
-    if(settings.hints&&settings.voice){
+    if(rem<=100&&s.dist>=300&&!R.flags.h100){R.flags.h100=1;cue('h100','Noch 100 Meter')}
+    if(settings.hints&&(settings.voice||settings.musicMode)){
       const cp=Math.floor(R.stepDist/250);
       if(cp>=1&&cp!==R.flags.cp&&rem>120){R.flags.cp=cp;const p=curPace();
-        if(p){const d=p-s.pace;speak(d>10?`Pace ${spPace(p).replace(' pro Kilometer','')}. Etwas schneller.`:d<-10?`Pace ${spPace(p).replace(' pro Kilometer','')}. Etwas langsamer.`:'Pace passt.')}}
+        if(p){const d=p-s.pace;
+          if(settings.musicMode){if(d>10)cue('faster');else if(d<-10)cue('slower')}
+          else speak(d>10?`Pace ${spPace(p).replace(' pro Kilometer','')}. Etwas schneller.`:d<-10?`Pace ${spPace(p).replace(' pro Kilometer','')}. Etwas langsamer.`:'Pace passt.')}}
     }
   }else{
     const rem=s.dur-R.stepTime;
     if(rem<=0){next();return}
     const c=Math.ceil(rem);
     if(c<=3&&R.flags.cnt!==c){R.flags.cnt=c;beep(880,0.15)}
-    if(s.type==='rest'&&s.dur>=20&&rem<=10&&!R.flags.t10){R.flags.t10=1;speak('Noch 10 Sekunden')}
+    if(s.type==='rest'&&s.dur>=20&&rem<=10&&!R.flags.t10){R.flags.t10=1;cue('t10','Noch 10 Sekunden')}
   }
   paint();
 }
@@ -573,7 +628,7 @@ function paint(){
 function finish(early){
   if(early&&R.stepTime>3)logStep();
   stopSensors();R.state='done';setLocked(false);
-  speak(`Training beendet. ${(R.totalDist/1000).toFixed(2).replace('.',' Komma ')} Kilometer.`);beep(1320,0.5);
+  if(settings.musicMode)playPattern('end');else{speak(`Training beendet. ${(R.totalDist/1000).toFixed(2).replace('.',' Komma ')} Kilometer.`);beep(1320,0.5)}
   let id=null;
   if(R.total>=10){
     id='r'+Date.now();
@@ -612,10 +667,11 @@ async function exportHist(){
 
 /* ---------- Init ---------- */
 (function(){
-  $('#s-beep').checked=settings.beep;$('#s-voice').checked=settings.voice;$('#s-hints').checked=settings.hints;
+  $('#s-beep').checked=settings.beep;$('#s-music').checked=settings.musicMode;$('#s-kalman').checked=settings.kalman;$('#s-doppler').checked=settings.doppler;$('#s-voice').checked=settings.voice;$('#s-hints').checked=settings.hints;
   $('#s-startlock').checked=settings.startLocked;$('#s-autolock').checked=settings.autoLock;
   $('#s-vol').value=settings.volume;$('#s-rate').value=settings.rate;$('#s-corr').value=settings.corr;
   try{speechSynthesis.getVoices()}catch(e){}
+  setAudioSession();
   savePlans();show('home');
 })();
 </script>

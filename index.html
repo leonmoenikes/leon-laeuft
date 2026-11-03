@@ -423,7 +423,9 @@ function fmtDate(iso){return new Date(iso).toLocaleString('de-DE',{day:'2-digit'
 function defaultPlan(){return {id:'p'+Date.now(),name:'5 × 1000 m',warm:10,cool:5,sets:[{reps:5,dist:1000,pace:240,rest:120}]}}
 let plans=LS.get('iv_plans',null)||[defaultPlan()];
 let history=LS.get('iv_hist',[]);
-let settings=Object.assign({beep:true,voice:true,hints:true,volume:0.8,rate:1,corr:0,startLocked:true,autoLock:true,musicMode:true,kalman:true,doppler:true,berlin:true,vboost:1.6},LS.get('iv_settings',{}));
+let settings=Object.assign({beep:true,voice:true,hints:true,volume:0.8,rate:1,corr:0,startLocked:true,autoLock:true,musicMode:false,kalman:true,doppler:true,berlin:true,vboost:1.6},LS.get('iv_settings',{}));
+// Einmalige Umstellung (v2): Musik-Modus aus, damit die Berliner Stimme spricht – sie liegt jetzt sauber über der Musik
+if((settings.ver||1)<2){settings.musicMode=false;settings.ver=2;try{if(localStorage.getItem('iv_settings'))LS.set('iv_settings',settings)}catch(e){}}
 const savePlans=()=>LS.set('iv_plans',plans);
 const saveHist=()=>LS.set('iv_hist',history);
 function saveSettings(){LS.set('iv_settings',settings)}

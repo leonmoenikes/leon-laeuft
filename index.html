@@ -273,6 +273,10 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
 .hk-run{--c:var(--green)}.hk-iv{--c:var(--orange)}.hk-race{--c:var(--purple)}.hk-coach{--c:var(--blue)}
 .linkcell{width:100%;background:none;border:0;color:var(--blue);font-size:17px;font-family:inherit;text-align:left;cursor:pointer}
 #toast{position:fixed;left:16px;right:16px;top:calc(env(safe-area-inset-top) + 10px);z-index:200;background:rgba(30,30,32,.94);color:#fff;font-size:15px;line-height:1.35;padding:12px 16px;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+.advice .btnrow{margin-top:12px}
+/* Ablauf-Leiste einer Antonia-Einheit in der Farbe ihrer Art */
+.plan.k-easy .seg .k-run,.plan.k-long .seg .k-run{--c:var(--green)}.plan.k-tempo .seg .k-run,.plan.k-race .seg .k-run{--c:var(--red)}.plan.k-test .seg .k-run{--c:var(--purple)}
+.advice{border:1.5px solid var(--green)}
 .resume{padding:14px 16px;margin-bottom:12px;border:1.5px solid var(--orange)}
 .resume .rtop{display:flex;gap:12px;align-items:center}
 .resume b{display:block;font-size:17px}.resume small{color:var(--mut);font-size:14px}
@@ -461,7 +465,7 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
 </div>
 
 <script>
-const APP_VER='2026-11-04.4'; // bei Änderungen hochzählen – wird in den Einstellungen angezeigt
+const APP_VER='2026-11-04.5'; // bei Änderungen hochzählen – wird in den Einstellungen angezeigt
 /* ---------- Helfer ---------- */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1157,7 +1161,8 @@ const ymd=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${Str
 function parseYmd(s){const [y,m,d]=String(s).split('-').map(Number);return new Date(y,(m||1)-1,d||1)}
 function mondayOf(d){const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()-(x.getDay()+6)%7);return x}
 function defStart(){const t=new Date(),m=mondayOf(t);if(t.getDay()!==1)m.setDate(m.getDate()+7);return ymd(m)}
-function sessDate(s){const d=mondayOf(parseYmd(coach.cfg.start));d.setDate(d.getDate()+s.w*7+s.day);return d}
+// off: Verschiebung in Tagen (Einheit verschoben, z. B. wegen Krankheit)
+function sessDate(s){const d=mondayOf(parseYmd(coach.cfg.start));d.setDate(d.getDate()+s.w*7+s.day+(s.off||0));return d}
 const fmtDay=d=>d.toLocaleDateString('de-DE',{weekday:'short',day:'numeric',month:'numeric'});
 const sessPlan=s=>({id:s.id,name:`${s.title} · Woche ${s.w+1}`,warm:s.plan.warm,cool:s.plan.cool,nm:s.plan.nm,sets:s.plan.sets});
 const sessKm=s=>s.plan.sets.reduce((a,x)=>a+x.reps*x.dist,0);
@@ -1223,10 +1228,12 @@ function createCoach(){
   const sessions=genCoach(cfg);
   if(coach){ // Erledigte Einheiten übernehmen
     if(!confirm('Plan neu berechnen? Bereits erledigte Einheiten bleiben abgehakt.'))return;
-    const old={};coach.sessions.forEach(s=>{if(s.done)old[s.id]=s.done});
-    sessions.forEach(s=>{if(old[s.id])s.done=old[s.id]});
+    const old={};coach.sessions.forEach(s=>old[s.id]=s);
+    sessions.forEach(s=>{const o=old[s.id];if(!o)return;if(o.done)s.done=o.done;if(o.off)s.off=o.off});
   }
-  coach={cfg,sessions,created:new Date().toISOString()};saveCoach();cf=null;renderCoach();window.scrollTo(0,0);
+  const adj=coach&&coach.adj||0,adjAt=coach&&coach.adjAt||null;
+  if(adj)sessions.forEach(s=>{if(!s.done&&s.kind!=='test')s.plan.sets.forEach(x=>x.pace=Math.max(150,x.pace+adj))});
+  coach={cfg,sessions,created:new Date().toISOString(),adj,adjAt};saveCoach();cf=null;renderCoach();window.scrollTo(0,0);
 }
 function delCoach(){if(confirm('Trainingsplan löschen? Der Verlauf bleibt erhalten.')){coach=null;LS.set('iv_coach',null);cf=null;renderCoach();window.scrollTo(0,0)}}
 
@@ -1234,15 +1241,20 @@ function delCoach(){if(confirm('Trainingsplan löschen? Der Verlauf bleibt erhal
 const CHEV='<svg class="chev" viewBox="0 0 8 13"><path d="M1.5 1.5l5 5-5 5"/></svg>';
 function renderPlan(){
   const c=coach.cfg,G=GOALS[c.goal],ss=coach.sessions,N=c.weeks;
-  const done=ss.filter(s=>s.done).length,nx=ss.find(s=>!s.done);
+  const done=ss.filter(s=>s.done).length,nx=ss.filter(s=>!s.done).sort((a,b)=>sessDate(a)-sessDate(b))[0];
   const start=mondayOf(parseYmd(c.start)),today=new Date();
-  const cw=Math.floor((mondayOf(today)-start)/(7*864e5));
+  const cw=nx?nx.w:N-1,adv=coachAdvice();
   let h=`<div class="kicker">Ziel: ${G.n} in ${fmtTime(c.time)}</div><div class="large">Antonia-Modus</div>
   <div class="group week"><div class="wt">Fortschritt</div>
-    <div><b>${cw<0?'–':Math.min(N,cw+1)}<small style="font-size:15px;font-weight:500"> / ${N}</small></b><small>Woche</small></div>
+    <div><b>${Math.min(N,cw+1)}<small style="font-size:15px;font-weight:500"> / ${N}</small></b><small>Woche</small></div>
     <div><b>${done}<small style="font-size:15px;font-weight:500"> / ${ss.length}</small></b><small>Einheiten</small></div>
     <div><b>${fmtPace(c.time/(G.d/1000))}</b><small>Zieltempo</small></div>
     <div class="pbar" style="grid-column:1/-1;margin:14px 16px 0;border:0;padding:0"><i style="width:${done/ss.length*100}%"></i></div></div>`;
+  if(adv)h+=`<div class="group why advice"><b>${adv.adj<0?'Du bist schneller als geplant 💪':'Etwas ruhiger angehen?'}</b><br>
+    In deinen letzten 3 Tempo-Einheiten warst du im Schnitt ${Math.round(Math.abs(adv.mean))} s/km ${adv.mean<0?'schneller':'langsamer'} als vorgegeben.
+    ${adv.adj<0?`Sollen die restlichen Einheiten ${-adv.adj} s/km schneller werden? Dein Ziel von ${fmtTime(c.time)} sieht gut aus – vielleicht ist sogar mehr drin.`
+      :`Sollen die restlichen Einheiten ${adv.adj} s/km ruhiger werden? Lieber etwas langsamer und dafür sauber durchgezogen.`}
+    <div class="btnrow"><button class="btn fill" onclick="applyAdvice(${adv.adj})">Ja, anpassen</button><button class="btn" onclick="dismissAdvice()">Nein, so lassen</button></div></div>`;
   if(nx){
     const d=sessDate(nx),isToday=ymd(d)===ymd(today),past=d<today&&!isToday;
     h+=`<div class="head">Nächste Einheit</div>
@@ -1256,15 +1268,16 @@ function renderPlan(){
       <div class="pact"><button onclick="openSess('${nx.id}')">Details</button></div></div>`;
   }else h+=`<div class="group why" style="text-align:center;margin-top:12px"><div style="font-size:40px">🏁</div><b>Plan geschafft!</b><div style="color:var(--mut);margin-top:4px">Alle Einheiten erledigt. Stark, Antonia!</div></div>`;
   for(let w=0;w<N;w++){
-    const ws=ss.filter(s=>s.w===w),a=new Date(start);a.setDate(a.getDate()+w*7);const b=new Date(a);b.setDate(b.getDate()+6);
+    const ws=ss.filter(s=>s.w===w).sort((x,y)=>sessDate(x)-sessDate(y)),a=sessDate(ws[0]),b=sessDate(ws[ws.length-1]);
     const dr=`${a.getDate()}.${a.getMonth()+1}. – ${b.getDate()}.${b.getMonth()+1}.`;
-    h+=`<div class="head whead${w===cw?' now':''}"><span>Woche ${w+1} · ${ws[0].rec?'Erholung':PHASE[ws[0].phase]}</span><small>${w===cw?'diese Woche':dr}</small></div><div class="group">`+
+    h+=`<div class="head whead${w===cw?' now':''}"><span>Woche ${w+1} · ${ws[0].rec?'Erholung':PHASE[ws[0].phase]}</span><small>${w===cw?'aktuell · '+dr:dr}</small></div><div class="group">`+
       ws.map(s=>`<div class="sess k-${s.kind}${s.done?' done':''}${nx&&s.id===nx.id?' nx':''}" onclick="openSess('${s.id}')">
         <span class="chk"><svg viewBox="0 0 14 14"><path d="M3 7.5l2.6 2.6L11 4.5"/></svg></span>
         <span class="tx"><b>${esc(s.title)}</b><small>${sessShort(s)}</small></span>
         <span class="dt">${fmtDay(sessDate(s)).replace(', ','<br>')}</span>${CHEV}</div>`).join('')+`</div>`;
   }
-  h+=`<div class="head">Deine Tempi</div><div class="group">${(()=>{const P=cPaces(c.goal,c.time);return [['easy','Locker'],['long','Langer Lauf'],['tempo','Tempolauf'],['int','Intervalle'],['race','Zieltempo']].map(([k,l])=>`<div class="cell"><span class="l">${l}</span><span class="v2">${fmtPace(P[k])} /km</span></div>`).join('')})()}</div>
+  h+=`<div class="head">Deine Tempi</div><div class="group">${(()=>{const P=cPaces(c.goal,c.time),a=coach.adj||0;return [['easy','Locker'],['long','Langer Lauf'],['tempo','Tempolauf'],['int','Intervalle'],['race','Zieltempo']].map(([k,l])=>`<div class="cell"><span class="l">${l}</span><span class="v2">${fmtPace(P[k]+(k==='race'?0:a))} /km</span></div>`).join('')})()}</div>
+  ${coach.adj?`<p class="foot">Trainingstempi an deine Form angepasst: ${coach.adj>0?'+':'−'}${Math.abs(coach.adj)} s/km.</p>`:''}
   ${c.cur?`<p class="foot">Die Tempi steigern sich von deiner Bestzeit (${fmtTime(c.cur)}) bis zum Ziel. Angezeigt sind die Zieltempi.</p>`:''}
   <div class="btnrow" style="margin-top:22px"><button class="btn" onclick="cf=newCf();renderCoach();window.scrollTo(0,0)">Plan anpassen</button><button class="btn red" onclick="delCoach()">Plan löschen</button></div>`;
   $('#coachbody').innerHTML=h;
@@ -1276,6 +1289,29 @@ function startSess(id){const s=coach&&coach.sessions.find(x=>x.id===id);if(!s)re
   if(s.kind==='test'){startRace({D:s.plan.sets[0].dist,time:coach.cfg.time,ant:true},s.id,'coach');return} // Testlauf = Rennmodus
   startPlan(sessPlan(s),s.id,'coach')}
 function toggleDone(){const s=coach.sessions.find(x=>x.id===curSess);if(!s)return;s.done=s.done?null:{run:null,date:new Date().toISOString()};saveCoach();renderSess()}
+const QUAL=['int','rep','tempo','race'];
+// mittlere Abweichung vom Soll-Tempo einer erledigten Einheit (s/km, negativ = schneller)
+function sessDev(s){const r=s.done&&s.done.run&&runs.find(x=>x.id===s.done.run);if(!r)return null;
+  let w=0,sum=0;r.log.forEach(l=>{if(l.type==='run'&&l.target&&l.tdist&&l.dist>=0.9*l.tdist){sum+=(l.time/l.dist*1000-l.target)*l.dist;w+=l.dist}});return w>=800?sum/w:null}
+// Plan lernt mit: 3 Tempo-Einheiten in Folge deutlich schneller (≤ −5 s/km) oder langsamer (≥ +8 s/km) → Vorschlag
+function coachAdvice(){
+  if(!coach.sessions.some(s=>!s.done&&s.kind!=='test'))return null;
+  const since=coach.adjAt?new Date(coach.adjAt):new Date(0);
+  const ds=coach.sessions.filter(s=>QUAL.includes(s.kind)&&s.done&&new Date(s.done.date)>since).sort((a,b)=>new Date(a.done.date)-new Date(b.done.date))
+    .map(sessDev).filter(d=>d!==null).slice(-3);
+  if(ds.length<3)return null;const mean=ds.reduce((a,b)=>a+b,0)/3;
+  if(ds.every(d=>d<=-5))return {mean,adj:-Math.min(10,Math.max(3,Math.round(-mean/2)))};
+  if(ds.every(d=>d>=8))return {mean,adj:Math.min(10,Math.max(3,Math.round(mean/2)))};
+  return null;
+}
+function applyAdvice(adj){coach.sessions.forEach(s=>{if(!s.done&&s.kind!=='test')s.plan.sets.forEach(x=>x.pace=Math.max(150,x.pace+adj))});
+  coach.adj=(coach.adj||0)+adj;coach.adjAt=new Date().toISOString();saveCoach();renderCoach();toast(`Tempi ${adj<0?'schneller':'ruhiger'} gestellt (${adj>0?'+':'−'}${Math.abs(adj)} s/km)`)}
+function dismissAdvice(){coach.adjAt=new Date().toISOString();saveCoach();renderCoach()}
+function shiftSess(days){const s=coach.sessions.find(x=>x.id===curSess);if(!s)return;s.off=(s.off||0)+days;if(!s.off)delete s.off;saveCoach();renderSess();
+  toast(`Neuer Termin: ${sessDate(s).toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'})}`)}
+function shiftPlanWeek(){const cur=coach.sessions.find(x=>x.id===curSess);if(!cur)return;
+  if(!confirm('Alle offenen Einheiten ab dieser um eine Woche verschieben? Der Plan endet dann eine Woche später.'))return;
+  const from=sessDate(cur);coach.sessions.forEach(s=>{if(!s.done&&sessDate(s)>=from)s.off=(s.off||0)+7});saveCoach();renderSess();toast('Plan um eine Woche verschoben')}
 function renderSess(){
   const s=coach&&coach.sessions.find(x=>x.id===curSess);if(!s){show('coach');return}
   const p=sessPlan(s),run=s.done&&s.done.run&&runs.find(r=>r.id===s.done.run);
@@ -1296,6 +1332,13 @@ function renderSess(){
   ${s.kind==='test'?`<p class="foot">Der Testlauf startet im Rennmodus: Negativ-Split auf deine Zielzeit, mit Zwischenzeiten jeden Kilometer. Vorher selbst ${s.plan.warm||10} Minuten einlaufen.</p>`:''}
   <div style="margin-top:22px"><button class="btn fill" style="font-size:19px;padding:17px" onclick="startSess('${s.id}')">${s.kind==='test'?'Testlauf starten':'Einheit starten'}</button></div>
   <div class="btnrow"><button class="btn" onclick="toggleDone()">${s.done?'✓ Erledigt – zurücksetzen':'Als erledigt markieren'}</button></div>
+  ${s.done?(()=>{const d=sessDev(s);return d===null?'':`<p class="foot">Im Schnitt ${Math.abs(Math.round(d))} s/km ${d<0?'schneller':'langsamer'} als vorgegeben${Math.abs(d)<=5?' – sauber getroffen.':'.'}</p>`})()
+   :`<div class="head">Verschieben</div><div class="group">
+      <button class="cell linkcell" onclick="shiftSess(1)">Einen Tag später</button>
+      <button class="cell linkcell" onclick="shiftSess(2)">Zwei Tage später</button>
+      ${s.off?`<button class="cell linkcell" onclick="shiftSess(${-s.off})">Auf ursprünglichen Termin zurück</button>`:''}
+      <button class="cell linkcell" onclick="shiftPlanWeek()">Ab hier alles eine Woche später</button></div>
+    <p class="foot">„Alles eine Woche später“ ist für Krankheit oder Urlaub: Alle offenen Einheiten ab dieser rücken eine Woche nach hinten, der Plan endet entsprechend später.</p>`}
   ${run?`<div class="btnrow"><button class="btn" onclick="showRun('${run.id}')">Lauf ansehen · ${km2(run.dist)} km in ${fmtTime(run.time)}</button></div>`:''}`;
 }
 

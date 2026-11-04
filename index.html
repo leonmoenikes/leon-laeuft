@@ -273,6 +273,10 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
 .hk-run{--c:var(--green)}.hk-iv{--c:var(--orange)}.hk-race{--c:var(--purple)}.hk-coach{--c:var(--blue)}
 .linkcell{width:100%;background:none;border:0;color:var(--blue);font-size:17px;font-family:inherit;text-align:left;cursor:pointer}
 #toast{position:fixed;left:16px;right:16px;top:calc(env(safe-area-inset-top) + 10px);z-index:200;background:rgba(30,30,32,.94);color:#fff;font-size:15px;line-height:1.35;padding:12px 16px;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+.resume{padding:14px 16px;margin-bottom:12px;border:1.5px solid var(--orange)}
+.resume .rtop{display:flex;gap:12px;align-items:center}
+.resume b{display:block;font-size:17px}.resume small{color:var(--mut);font-size:14px}
+.resume .btnrow .btn{padding:11px 6px;font-size:15px}
 </style>
 </head>
 <body>
@@ -281,6 +285,7 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
 <div class="view on" id="v-home">
   <div class="kicker" id="today"></div>
   <div class="large">Training</div>
+  <div id="resume"></div>
   <div id="week"></div>
   <div class="segc kinds" id="kindsw"></div>
   <div id="plans"></div>
@@ -429,7 +434,7 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
   </div>
   <p class="foot">Alle Daten liegen nur auf diesem iPhone. Das Backup enthält Vorlagen, Verlauf mit Strecken, Antonias Plan und Einstellungen – speichere es z. B. in „Dateien“. Beim Wiederherstellen werden die Daten auf diesem Gerät ersetzt; ein alter Verlauf-Export wird ergänzt.</p>
   <p class="foot" style="margin-top:14px">Tipp: In Safari „Teilen → Zum Home-Bildschirm“ wählen und die App von dort starten.</p>
-  <p class="foot" id="s-info" style="margin-top:14px"></p>
+  <p class="foot" style="margin-top:14px"><span id="s-info"></span><span id="s-off"></span></p>
 </div>
 
 <div id="toast" hidden></div>
@@ -442,7 +447,7 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
 </div>
 
 <script>
-const APP_VER='2026-11-04.2'; // bei Änderungen hochzählen – wird in den Einstellungen angezeigt
+const APP_VER='2026-11-04.3'; // bei Änderungen hochzählen – wird in den Einstellungen angezeigt
 /* ---------- Helfer ---------- */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -526,6 +531,7 @@ const PLAY='<svg viewBox="0 0 24 24"><path d="M6 4.5v15l13-7.5z"/></svg>';
 const runGoal=p=>p.goal==='time'?`${p.dur} min`:p.goal==='dist'?fmtDist(p.dist):'Frei';
 function runDesc(p){return `${p.goal==='time'?`${p.dur} Minuten`:p.goal==='dist'?fmtDist(p.dist):'Freier Lauf'}${p.pace?` @ ${fmtPace(p.pace)} /km`:' im Wohlfühltempo'} · Ansage jeden Kilometer${p.pace?' mit Tempo-Hinweis':''}`}
 function renderHome(){
+  $('#resume').innerHTML=resumeCard();
   $('#today').textContent=new Date().toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'});
   const wk=runs.filter(r=>Date.now()-new Date(r.date)<7*864e5);
   $('#week').innerHTML=runs.length?`<div class="group week"><div class="wt">Letzte 7 Tage</div>
@@ -826,7 +832,7 @@ function startRun(id){const plan=plans.find(p=>p.id===id);if(plan)startPlan(plan
 // sess: ID einer Antonia-Einheit (wird nach dem Lauf abgehakt), back: Ansicht nach Abbruch
 function startPlan(plan,sess,back){
   if(!('geolocation' in navigator)){alert('Dieses Gerät bietet kein GPS im Browser.');return}
-  R={plan,sess,back,kind:sess?'coach':'iv',steps:buildSteps(plan),state:'wait',i:0,stepTime:0,stepDist:0,total:0,totalDist:0,paused:false,locked:false,lastTouch:performance.now(),last:performance.now(),kf:null,lastF:null,skips:0,spd:null,spdT:0,win:[],log:[],started:new Date().toISOString(),acc:null,flags:{},err:null};
+  R={plan,sess,back,kind:sess?'coach':'iv',track:[],rawDist:0,steps:buildSteps(plan),state:'wait',i:0,stepTime:0,stepDist:0,total:0,totalDist:0,paused:false,locked:false,lastTouch:performance.now(),last:performance.now(),kf:null,lastF:null,skips:0,spd:null,spdT:0,win:[],log:[],started:new Date().toISOString(),acc:null,flags:{},err:null};
   $('#rtitle').textContent=plan.name;$('#rplan').textContent=plan.sum||summ(plan);$('#runwait').hidden=false;$('#runlive').hidden=true;
   $('#wseg').innerHTML=segHTML(R.steps);$('#rtl').innerHTML=$('#ltl').innerHTML=segHTML(R.steps,true);
   $('#v-run').classList.remove('paused');paintPauseBtn();setRunKind();
@@ -835,7 +841,7 @@ function startPlan(plan,sess,back){
 }
 // Farbe des Laufbildschirms nach Art: Lauf grün, Rennen lila, Intervalle orange
 function setRunKind(race){const k=race?'race':R.kind;$('#v-run').dataset.k=$('#lock').dataset.k=k}
-function abortWait(){const b=R&&R.back||'home';stopSensors();R=null;show(b)}
+function abortWait(){const b=R&&R.back||'home';stopSensors();R=null;clearLive();show(b)}
 function stopSensors(){if(!R)return;clearInterval(R.timer);try{navigator.geolocation.clearWatch(R.watch)}catch(e){}releaseWake()}
 
 function onPosErr(e){if(!R)return;R.err=e.code===1?'Standort verweigert':'GPS-Fehler';paintGps()}
@@ -875,7 +881,10 @@ function onPos(p){
   R.lastF={x:k.x,y:k.y};
   const d=step*(1+(settings.corr||0)/100);
   if(R.state==='run'&&!R.paused){
-    R.stepDist+=d;R.totalDist+=d;
+    R.stepDist+=d;R.totalDist+=d;R.rawDist+=step;
+    // Strecke: Punkt alle ≥ 5 m (gefilterte Position zurückgerechnet in lat/lon)
+    const lt=R.track[R.track.length-1],la=k.lat0+k.y/111132,lo=k.lon0+k.x/k.mx;
+    if(!lt||Math.hypot((la-lt[0])*111132,(lo-lt[1])*k.mx)>=5)R.track.push([+la.toFixed(6),+lo.toFixed(6),Math.round(R.total)]);
     const now=performance.now()/1000;R.win.push({t:now,d:R.totalDist});
     while(R.win.length&&now-R.win[0].t>20)R.win.shift();
   }
@@ -904,7 +913,7 @@ function go(){
   unlockAudio();R.state='run';R.last=performance.now();R.lastTouch=performance.now();
   $('#runwait').hidden=true;$('#runlive').hidden=false;
   if(berlinOn()&&!R.race)say(['@start']);
-  requestWake();enterStep(0);R.timer=setInterval(tick,250);
+  requestWake();enterStep(0);R.timer=setInterval(tick,250);saveLive();
   if(settings.startLocked)setLocked(true);
 }
 function enterStep(i){
@@ -932,7 +941,7 @@ function logStep(){
 function next(carry=0){logStep();if(R.i+1>=R.steps.length)finish(false);else{enterStep(R.i+1);R.stepTime=Math.max(0,carry)}}
 function skipStep(){if(R&&R.state==='run'&&confirm('Abschnitt überspringen?'))next()}
 function togglePause(){
-  if(!R||R.state!=='run')return;R.paused=!R.paused;R.win=[];R.kf=null;R.spd=null;R.last=performance.now();
+  if(!R||R.state!=='run')return;R.paused=!R.paused;if(R.paused&&R.track.length&&R.track[R.track.length-1])R.track.push(null);R.win=[];R.kf=null;R.spd=null;R.last=performance.now();
   $('#v-run').classList.toggle('paused',R.paused);paintPauseBtn();paint();
 }
 function paintPauseBtn(){
@@ -945,6 +954,7 @@ function endEarly(){if(confirm('Training beenden und speichern?'))finish(true)}
 function tick(){
   if(!R||R.state!=='run')return;
   const now=performance.now(),dt=(now-R.last)/1000;R.last=now;
+  if(now-(R.lastSave||0)>5000){R.lastSave=now;saveLive()}
   if(settings.autoLock&&!R.locked&&!R.paused&&now-R.lastTouch>10000)setLocked(true);
   if(R.paused){paint();return}
   R.stepTime+=dt;R.total+=dt;
@@ -1033,11 +1043,13 @@ function paint(){
   }
 }
 
-function finish(early){
+// quiet: ohne Ansage (Speichern eines unterbrochenen Laufs)
+function finish(early,quiet=false){
   if(early&&R.stepTime>3)logStep();
-  stopSensors();R.state='done';setLocked(false);
+  stopSensors();R.state='done';setLocked(false);clearLive();
   const rc=R.race;
-  if(rc&&!early){const good=R.total<=rc.T+0.5;
+  if(quiet){}
+  else if(rc&&!early){const good=R.total<=rc.T+0.5;
     raceTalk(`Ziel! Endzeit ${spTime(R.total)}. ${good?'Zielzeit geknackt!':'Knapp vorbei.'}`,['#beep','@rfin','rtime',...TK.time(R.total),good?'@rgood':'@rmiss'],'end');
   }
   else if(settings.musicMode)playPattern('end');
@@ -1053,6 +1065,7 @@ function finish(early){
     id='r'+Date.now();
     runs.push({id,kind:R.kind,date:R.started,name:R.plan.name,time:R.total,dist:R.totalDist,pace:R.totalDist>30?R.total/R.totalDist*1000:0,log:R.log});
     saveHist();
+    if(R.track&&R.track.filter(Boolean).length>1)trackPut(id,R.track);
     if(R.sess&&!early)coachDone(R.sess,id);
   }
   const back=R.back||'home';
@@ -1381,7 +1394,46 @@ function showRun(id){
   <div class="group"><table><tr><th>Abschnitt</th><th>Dist.</th><th>Zeit</th><th>Pace</th></tr>${rows}</table></div>`;
   show('detail');
 }
-function delRun(){if(confirm('Diesen Lauf löschen?')){runs=runs.filter(x=>x.id!==curRun);saveHist();show('hist')}}
+function delRun(){if(confirm('Diesen Lauf löschen?')){runs=runs.filter(x=>x.id!==curRun);saveHist();trackDel(curRun);show('hist')}}
+/* ---------- Absturzschutz ----------
+   iOS kann die Web-App im Hintergrund beenden (z. B. beim Wechsel in die
+   Spotify-App). Darum wird der laufende Lauf alle 5 s und beim Verlassen in
+   localStorage gesichert. Beim nächsten Öffnen: fortsetzen, speichern oder
+   verwerfen. Bei Rennen läuft die Uhr während der Unterbrechung weiter,
+   bei Training zählt die Lücke als Pause. */
+const LIVE_SKIP=new Set(['timer','watch','wl','wlOk','kf','lastF','win','spd','spdT','last','lastTouch','lastSave','locked','skips','acc','err']);
+function saveLive(){if(!R||R.state!=='run')return;const o={};for(const k in R)if(!LIVE_SKIP.has(k))o[k]=R[k];o.savedAt=Date.now();LS.set('iv_live',o)}
+function clearLive(){try{localStorage.removeItem('iv_live')}catch(e){}}
+const liveAge=o=>(Date.now()-(o.savedAt||0))/1000;
+function resumeCard(){
+  const o=LS.get('iv_live',null);if(!o||!o.plan)return '';
+  const age=liveAge(o),canGo=age<3*3600;
+  return `<div class="group resume"><div class="rtop"><span class="hic hk-${HK[o.kind]?o.kind:'iv'}">${IC[HK[o.kind]?HK[o.kind].ic:'rep']}</span>
+    <div class="hx"><b>Lauf unterbrochen</b><small>${esc(o.plan.name)} · ${km2(o.totalDist||0)} km · ${fmtTime(o.total||0)} · vor ${age<3600?Math.max(1,Math.round(age/60))+' min':Math.round(age/3600)+' h'}</small></div></div>
+    <div class="btnrow">${canGo?`<button class="btn fill" onclick="resumeLive()">Fortsetzen</button>`:''}<button class="btn" onclick="finishLive()">Speichern</button><button class="btn red" onclick="discardLive()">Verwerfen</button></div></div>`;
+}
+function restoreR(o){
+  R=Object.assign({},o,{state:'run',paused:false,locked:false,kf:null,lastF:null,win:[],spd:null,spdT:0,skips:0,acc:null,err:null,
+    flags:o.flags||{},track:o.track||[],last:performance.now(),lastTouch:performance.now(),lastSave:0});
+  delete R.savedAt;
+}
+function resumeLive(){
+  const o=LS.get('iv_live',null);if(!o)return;
+  const gap=liveAge(o);restoreR(o);
+  if(R.race){R.stepTime+=gap;R.total+=gap}          // Rennuhr läuft weiter
+  if(R.track.length)R.track.push(null);              // Lücke in der Strecke
+  $('#rtitle').textContent=R.plan.name;$('#rtl').innerHTML=$('#ltl').innerHTML=segHTML(R.steps,true);
+  setRunKind(!!R.race);$('#v-run').classList.remove('paused');paintPauseBtn();
+  $('#runwait').hidden=true;$('#runlive').hidden=false;show('run');
+  unlockAudio();requestWake();paintGps();
+  R.watch=navigator.geolocation.watchPosition(onPos,onPosErr,{enableHighAccuracy:true,maximumAge:0,timeout:20000});
+  R.timer=setInterval(tick,250);beep(1320,0.3);saveLive();paint();
+}
+function finishLive(){const o=LS.get('iv_live',null);if(!o)return;restoreR(o);finish(true,true)}
+function discardLive(){if(confirm('Den unterbrochenen Lauf verwerfen? Er wird nicht gespeichert.')){clearLive();renderHome()}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')saveLive()});
+window.addEventListener('pagehide',saveLive);
+
 /* ---------- Streckenspeicher (IndexedDB) ----------
    GPS-Strecken sind zu groß für localStorage und liegen deshalb in IndexedDB
    (Schlüssel = Lauf-ID, Wert = [[lat, lon, sek], …], null = Pause). */
@@ -1444,12 +1496,14 @@ async function restoreAll(file){
   $('#s-beep').checked=settings.beep;$('#s-music').checked=settings.musicMode;$('#s-kalman').checked=settings.kalman;$('#s-doppler').checked=settings.doppler;$('#s-voice').checked=settings.voice;$('#s-berlin').checked=settings.berlin;$('#s-hints').checked=settings.hints;
   $('#s-startlock').checked=settings.startLocked;$('#s-autolock').checked=settings.autoLock;
   $('#s-vol').value=settings.volume;$('#s-vboost').value=settings.vboost;$('#s-rate').value=settings.rate;$('#s-corr').value=settings.corr;
+  // Offline-Fähigkeit (nur über https bzw. localhost möglich)
+  if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js').then(()=>navigator.serviceWorker.ready).then(()=>{const e=$('#s-off');if(e)e.textContent=' · Offline bereit'}).catch(()=>{});
   const vi=window.VOICE_INFO,vn=window.VOICE_BERLIN?Object.keys(VOICE_BERLIN).length:0;
   $('#s-info').textContent=`App-Stand ${APP_VER} · Stimme: ${vn?(vi?`${vi.name}, ${vn} Bausteine, Stand ${vi.built}`:`Thorsten (alt), ${vn} Bausteine`):'nicht geladen – App neu öffnen'}`;
   try{pickVoice();speechSynthesis.addEventListener('voiceschanged',pickVoice)}catch(e){}
   setAudioSession();
   savePlans();
-  const tab=LS.get('iv_tab','home');show(['home','coach','hist','set'].includes(tab)?tab:'home');
+  const tab=LS.get('iv_live',null)?'home':LS.get('iv_tab','home');show(['home','coach','hist','set'].includes(tab)?tab:'home');
 })();
 </script>
 </body>

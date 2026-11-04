@@ -277,6 +277,18 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
 .resume .rtop{display:flex;gap:12px;align-items:center}
 .resume b{display:block;font-size:17px}.resume small{color:var(--mut);font-size:14px}
 .resume .btnrow .btn{padding:11px 6px;font-size:15px}
+.cwrap{padding:12px 10px 8px}
+.cbox{position:relative}
+.csub{font-size:13px;color:var(--mut);margin:0 6px 6px}
+.chart{display:block;overflow:visible;touch-action:manipulation}
+.chart .grid{stroke:var(--sep);stroke-width:1}
+.chart .refl{stroke:var(--mut);stroke-width:1.5}
+.chart .axis{font-size:11px;fill:var(--mut);font-family:inherit}
+.chart .val{font-size:12px;font-weight:600;fill:var(--tx);font-family:inherit}
+.chart .dot{stroke:var(--card);stroke-width:2}
+.ctip{position:absolute;z-index:5;pointer-events:none;background:var(--tx);color:var(--card);font-size:13px;line-height:1.35;padding:6px 10px;border-radius:8px;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+.calcard .btnrow{margin-top:10px}
+.bt{color:var(--tx);font-weight:600}
 </style>
 </head>
 <body>
@@ -342,7 +354,7 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
       <div><b id="rdist">0,00</b><small>km gesamt</small></div>
       <div><b id="rcount">–</b><small id="rcountl">Intervall</small></div>
     </div>
-    <div class="group next"><small>Danach</small><i id="rnextdot"></i><span id="rnext"></span><button class="link" id="rskip" onclick="skipStep()">Überspringen</button></div>
+    <div class="group next"><small>Danach</small><i id="rnextdot"></i><span id="rnext"></span><button class="link" id="rskip" onclick="skipStep()">Überspringen</button><button class="link" id="ract" hidden></button></div>
     <div class="ctl">
       <button class="cbtn" onclick="togglePause()"><span class="ci pz" id="rpauseic"></span><span id="rpauselbl">Pause</span></button>
       <button class="cbtn" onclick="endEarly()"><span class="ci st"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg></span><span>Beenden</span></button>
@@ -380,7 +392,9 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
 <!-- HISTORY -->
 <div class="view" id="v-hist">
   <div class="large">Verlauf</div>
+  <div class="segc kinds" id="histsw"></div>
   <div id="histlist"></div>
+  <div id="stats" hidden></div>
   <div style="margin-top:18px"><button class="btn" onclick="backupAll()">Backup erstellen</button></div>
 </div>
 
@@ -447,7 +461,7 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
 </div>
 
 <script>
-const APP_VER='2026-11-04.3'; // bei Änderungen hochzählen – wird in den Einstellungen angezeigt
+const APP_VER='2026-11-04.4'; // bei Änderungen hochzählen – wird in den Einstellungen angezeigt
 /* ---------- Helfer ---------- */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1028,6 +1042,8 @@ function paint(){
     if(rc){$('#rcount').textContent=fmtTime(rc.T-rdiff);$('#rcountl').textContent='Prognose'}
     else{$('#rcount').textContent=single?fmtPace(R.stepDist>30?R.stepTime/R.stepDist*1000:0):cnt;$('#rcountl').textContent=single?'Ø Pace':'Intervall'}
     $('#rskip').hidden=!!(rc||F)||!nx;
+    const ra=$('#ract');ra.hidden=!rc;
+    if(rc){const near=rc.D-R.stepDist<600;ra.textContent=near?'Ziel ✓':'Km-Schild';ra.onclick=near?raceFinish:kmSign}
     $('#rnextdot').className=rc||F?'k-run':nx?'k-'+nx.type:'';
     if(rc){const sg=raceSeg(R.stepDist),i=rc.segs.indexOf(sg);$('#rnext').textContent=`Bei ${i+1===rc.segs.length?'Ziel':'km '+(i+1)}: Soll ${fmtTime(sg.cum)}`}
     else if(F)$('#rnext').textContent=F.goal==='time'?`Ende nach ${fmtTime(F.dur)}`:F.goal==='dist'?`Ziel bei ${fmtDist(F.dist)}`:'Beenden, wann du willst';
@@ -1063,7 +1079,7 @@ function finish(early,quiet=false){
   let id=null;
   if(R.total>=10){
     id='r'+Date.now();
-    runs.push({id,kind:R.kind,date:R.started,name:R.plan.name,time:R.total,dist:R.totalDist,pace:R.totalDist>30?R.total/R.totalDist*1000:0,log:R.log});
+    runs.push({id,kind:R.kind,...(rc&&rc.cal&&rc.cal.off>=2000?{cal:rc.cal}:{}),date:R.started,name:R.plan.name,time:R.total,dist:R.totalDist,pace:R.totalDist>30?R.total/R.totalDist*1000:0,log:R.log});
     saveHist();
     if(R.track&&R.track.filter(Boolean).length>1)trackPut(id,R.track);
     if(R.sess&&!early)coachDone(R.sess,id);
@@ -1348,6 +1364,22 @@ function raceKm(k,split,diff,rem){
   const txt=`${half?'Halbzeit. ':''}Kilometer ${k}. ${spTime(split)}. ${a<=2?'Genau im Plan':`${a} Sekunden ${diff>0?'vor':'hinter'} dem Plan`}.${half?` Hochgerechnet ${spTime(rc.T-diff)}.`:''}${last?' Letzter Kilometer!':''}`;
   raceTalk(txt,tk,k<=2&&diff>5?'slower':diff<-10?'faster':'t10');
 }
+// Km-Schild: GPS-Distanz auf den nächsten vollen Kilometer setzen (±350 m)
+function kmSign(){
+  if(!R||!R.race)return;const rc=R.race,d=R.stepDist,k=Math.round(d/1000);
+  if(k<1||k*1000>=rc.D||Math.abs(d-k*1000)>350){toast('Kein Kilometerschild in der Nähe – abgleichen geht nur ±350 m um einen vollen Kilometer.');return}
+  const delta=k*1000-d;R.stepDist+=delta;R.totalDist+=delta;R.win.forEach(w=>w.d+=delta);
+  rc.cal={off:k*1000,raw:R.rawDist};
+  toast(`Abgeglichen auf km ${k} (${delta>=0?'+':''}${Math.round(delta)} m)`,2500);beep(1320,0.12);paint();
+}
+// Ziel: Uhr genau an der Ziellinie stoppen
+function raceFinish(){
+  if(!R||!R.race||R.state!=='run')return;const rc=R.race,delta=rc.D-R.stepDist;
+  rc.cal={off:rc.D,raw:R.rawDist};R.stepDist=rc.D;R.totalDist+=delta;next();
+}
+// Vorschlag für die Distanz-Korrektur aus offizieller Distanz und gemessener GPS-Rohdistanz
+const calSuggest=c=>c&&c.raw>0?Math.round((c.off/c.raw-1)*1000)/10:null;
+function applyCal(v){settings.corr=v;saveSettings();$('#s-corr').value=v;toast(`Distanz-Korrektur auf ${fmtPct(v)} gesetzt`);showRun(curRun)}
 function raceTick(s,rem){
   const rc=R.race,d=R.stepDist,el=R.stepTime,diff=racePlanAt(d)-el,h=Math.floor(d/500);
   if(h>=1&&h!==rc.lastH&&rem>150){rc.lastH=h;
@@ -1373,6 +1405,9 @@ const kindOf=r=>r.kind||(/^Rennen/.test(r.name)?'race':/ · Woche \d+$/.test(r.n
 let histF=LS.get('iv_histf','all');
 function setHistF(k){histF=k;LS.set('iv_histf',k);renderHist()}
 function renderHist(){
+  $('#histsw').innerHTML=[['list','Liste'],['stats','Statistik']].map(([v,l])=>`<button class="${histView===v?'on':''}" onclick="setHistView('${v}')">${l}</button>`).join('');
+  $('#histlist').hidden=histView!=='list';$('#stats').hidden=histView!=='stats';
+  if(histView==='stats'){renderStats();return}
   const present=Object.keys(HK).filter(k=>runs.some(r=>kindOf(r)===k));
   if(histF!=='all'&&!present.includes(histF))histF='all';
   const h=runs.slice().reverse().filter(r=>histF==='all'||kindOf(r)===histF);
@@ -1381,20 +1416,154 @@ function renderHist(){
   <div class="s">${HK[k].t} · ${km2(r.dist)} km · ${fmtTime(r.time)} · Ø ${fmtPace(r.pace)}/km</div></div></div>`}).join('')}</div>`:'<p class="foot">Noch keine Läufe gespeichert.</p>');
 }
 let curRun=null;
-function showRun(id){
+// Kennfarbe je Art (für Diagramme und Strecke)
+const KC={run:'var(--green)',iv:'var(--orange)',race:'var(--purple)',coach:'var(--blue)'};
+const fmtPct=v=>`${v>0?'+':v<0?'−':''}${String(Math.abs(v)).replace('.',',')} %`;
+async function showRun(id){
   const r=runs.find(x=>x.id===id);if(!r)return;curRun=id;
+  const k=kindOf(r),sp=r.log.filter(l=>/^Km /.test(l.label)&&l.dist>=300);
   const rows=r.log.map(l=>{
     const pace=l.dist>30?l.time/l.dist*1000:0;
     let col='';if(l.target&&pace){const d=pace-l.target;col=Math.abs(d)<=5?'var(--green)':Math.abs(d)<=15?'var(--orange)':'var(--red)'}
     return `<tr><td>${esc(l.label)}</td><td>${Math.round(l.dist)} m</td><td>${fmtTime(l.time)}</td><td style="color:${col}">${fmtPace(pace)}${l.target?` <span style="color:var(--mut)">/ ${fmtPace(l.target)}</span>`:''}</td></tr>`}).join('');
-  const k=kindOf(r);
+  // Vorschlag Distanz-Korrektur nach Km-Schild-/Ziel-Abgleich
+  const cs=r.cal?calSuggest(r.cal):null,cur=settings.corr||0;
+  const cal=cs===null?'':`<div class="group why calcard"><b>GPS-Abgleich</b><br>Offiziell ${km2(r.cal.off)} km, das GPS hat ${km2(r.cal.raw)} km gemessen.${
+    Math.abs(cs)>5?' Die Abweichung ist ungewöhnlich groß (schlechtes Signal?) – deshalb kein Vorschlag.'
+    :Math.abs(cs-cur)<0.3?` Deine Distanz-Korrektur (${fmtPct(cur)}) passt dazu.`
+    :`<div class="btnrow"><button class="btn" onclick="applyCal(${cs})">Distanz-Korrektur auf ${fmtPct(cs)} setzen</button></div><small style="color:var(--mut)">Aktuell: ${fmtPct(cur)}. Gilt ab dem nächsten Lauf.</small>`}</div>`;
   $('#detail').innerHTML=`<div class="hk-${k}" style="margin:4px 4px 0"><span class="tag">${HK[k].t}</span></div><div class="large" style="margin-top:6px">${esc(r.name)}</div><p class="foot" style="margin:-8px 4px 14px">${fmtDate(r.date)}</p>
   <div class="group stats"><div><b>${km2(r.dist)}</b><small>km</small></div><div><b>${fmtTime(r.time)}</b><small>Zeit</small></div><div><b>${fmtPace(r.pace)}</b><small>Ø min/km</small></div></div>
-  <div class="head">${k==='run'||k==='race'||r.log.some(l=>/^Km /.test(l.label))?'Kilometer':'Abschnitte'}</div>
+  ${cal}
+  ${sp.length>=2?`<div class="head">Tempo je Kilometer</div><div class="group cwrap"><div class="csub">Tippe auf einen Punkt · oben = schneller</div><div id="pchart" class="cbox"></div></div>`:''}
+  <div id="trkwrap" hidden><div class="head">Strecke</div><div class="group cwrap"><div id="trk" class="cbox"></div></div>
+    <div class="btnrow"><button class="btn" onclick="exportGpx()">GPX exportieren (Strava, Garmin …)</button></div></div>
+  <div class="head">${sp.length?'Kilometer':'Abschnitte'}</div>
   <div class="group"><table><tr><th>Abschnitt</th><th>Dist.</th><th>Zeit</th><th>Pace</th></tr>${rows}</table></div>`;
   show('detail');
+  if(sp.length>=2){const t0=sp[0].target,tgt=t0&&sp.every(l=>l.target===t0)?t0:null;
+    lineChart($('#pchart'),sp.map(l=>({v:l.time/l.dist*1000,tip:`<b>${esc(l.label)}</b><br>${fmtPace(l.time/l.dist*1000)} /km · ${fmtTime(l.time)}`})),
+      {color:KC[k],fmt:fmtPace,ref:tgt,refLabel:tgt?'Soll '+fmtPace(tgt):'',xLabel:(p,i)=>String(i+1)})}
+  const t=await trackGet(id);
+  if(t&&curRun===id&&t.filter(Boolean).length>1){$('#trkwrap').hidden=false;trackSvg($('#trk'),t,KC[k])}
+}
+
+/* ---------- Statistik ---------- */
+let histView=LS.get('iv_histv','list');
+function setHistView(v){histView=v;LS.set('iv_histv',v);renderHist()}
+// Bestzeiten aus zusammenhängenden vollen Kilometern (Lauf/Rennen), 1000-m-Intervallen
+// und Läufen über die ganze Distanz (z. B. Halbmarathon-Rennen)
+function bestTimes(){
+  const out=[{t:'1 km',n:1},{t:'5 km',n:5},{t:'10 km',n:10},{t:'Halbmarathon',n:21.0975}];
+  const take=(o,t,r)=>{if(t>0&&(!o.time||t<o.time)){o.time=t;o.id=r.id;o.when=new Date(r.date).toLocaleDateString('de-DE',{day:'numeric',month:'numeric',year:'2-digit'})}};
+  runs.forEach(r=>{const k=kindOf(r);
+    const km=r.log.filter(l=>/^Km \d+$/.test(l.label)&&l.dist>=990).map(l=>l.time*1000/l.dist);
+    out.forEach(o=>{if(o.n%1===0)for(let i=0;i+o.n<=km.length;i++)take(o,km.slice(i,i+o.n).reduce((a,b)=>a+b,0),r);
+      const D=o.n*1000;if((k==='race'||k==='run')&&r.dist>=D*0.995&&r.dist<=D*1.03)take(o,r.time*D/r.dist,r)});
+    r.log.forEach(l=>{if(l.type==='run'&&l.tdist===1000&&l.dist>=990&&!/^Km /.test(l.label))take(out[0],l.time*1000/l.dist,r)});
+  });
+  return out;
+}
+function renderStats(){
+  const el=$('#stats');
+  if(!runs.length){el.innerHTML='<p class="foot">Noch keine Läufe – die Statistik füllt sich mit deinem ersten Lauf.</p>';return}
+  const now=new Date(),y0=new Date(now.getFullYear(),0,1),m0=new Date(now.getFullYear(),now.getMonth(),1);
+  const sum=a=>({n:a.length,km:a.reduce((s,r)=>s+r.dist,0),t:a.reduce((s,r)=>s+r.time,0)});
+  const yr=sum(runs.filter(r=>new Date(r.date)>=y0)),mo=sum(runs.filter(r=>new Date(r.date)>=m0));
+  const wk=[],mon=mondayOf(now);
+  for(let i=11;i>=0;i--){const a=new Date(mon);a.setDate(a.getDate()-7*i);const b=new Date(a);b.setDate(b.getDate()+7);
+    const rs=runs.filter(r=>{const d=new Date(r.date);return d>=a&&d<b});wk.push({a,km:rs.reduce((s,r)=>s+r.dist,0)/1000,n:rs.length})}
+  const best=bestTimes(),tr=runs.filter(r=>['run','race'].includes(kindOf(r))&&r.dist>=1000&&r.pace>0).slice(-20);
+  const dm=d=>`${d.getDate()}.${d.getMonth()+1}.`;
+  el.innerHTML=`
+  <div class="group week"><div class="wt">${now.getFullYear()}</div><div><b>${km2(yr.km)}</b><small>km</small></div><div><b>${yr.n}</b><small>${yr.n===1?'Lauf':'Läufe'}</small></div><div><b>${fmtTime(yr.t)}</b><small>Zeit</small></div></div>
+  <p class="foot" style="margin-top:-4px">Diesen Monat: ${km2(mo.km)} km in ${mo.n} ${mo.n===1?'Lauf':'Läufen'}</p>
+  <div class="head">Kilometer pro Woche</div><div class="group cwrap"><div class="csub">Letzte 12 Wochen · tippe auf eine Säule</div><div id="wchart" class="cbox"></div></div>
+  <div class="head">Bestzeiten</div>
+  <div class="group">${best.map(b=>`<div class="cell"${b.id?` onclick="showRun('${b.id}')"`:''}><span class="l">${b.t}</span><span class="v">${b.time?`<b class="bt">${fmtTime(b.time)}</b> · ${b.when}`:'–'}</span></div>`).join('')}</div>
+  <p class="foot">Aus den schnellsten zusammenhängenden Kilometern deiner Läufe und Rennen, aus 1000-m-Intervallen und aus Läufen über die ganze Distanz. Tippen öffnet den Lauf.</p>
+  ${tr.length>=2?`<div class="head">Tempo-Entwicklung</div><div class="group cwrap"><div class="csub">Ø-Tempo deiner Läufe und Rennen · oben = schneller</div><div id="tchart" class="cbox"></div></div>`:''}`;
+  barChart($('#wchart'),wk.map((w,i)=>({v:w.km,lab:(11-i)%3===0?dm(w.a):'',tip:`<b>Woche ab ${dm(w.a)}</b><br>${km2(w.km*1000)} km · ${w.n} ${w.n===1?'Lauf':'Läufe'}`})),
+    {color:'var(--blue)',fmt:v=>String(Math.round(v)),label:true});
+  if(tr.length>=2)lineChart($('#tchart'),tr.map(r=>({v:r.pace,x:new Date(r.date).getTime(),tip:`<b>${esc(r.name)}</b><br>${dm(new Date(r.date))} · ${km2(r.dist)} km · ${fmtPace(r.pace)} /km`})),
+    {color:'var(--blue)',fmt:fmtPace,xLabel:p=>dm(new Date(p.x))});
 }
 function delRun(){if(confirm('Diesen Lauf löschen?')){runs=runs.filter(x=>x.id!==curRun);saveHist();trackDel(curRun);show('hist')}}
+/* ---------- Diagramme (SVG, ohne Bibliothek) ----------
+   Eine Datenreihe je Diagramm, Linien 2px, Punkte r=4 mit 2px Ring in
+   Flächenfarbe, Säulen ≤ 24px mit 4px runder Oberkante, Rasterlinien 1px
+   durchgehend. Tippen/Hovern zeigt einen Tooltip mit den genauen Werten. */
+const SVGNS='http://www.w3.org/2000/svg';
+function svgEl(tag,attrs,parent){const e=document.createElementNS(SVGNS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
+function chartTip(wrap,x,y,html){let t=wrap.querySelector('.ctip');if(!t){t=document.createElement('div');t.className='ctip';wrap.appendChild(t)}
+  t.innerHTML=html;t.hidden=false;const w=wrap.clientWidth;t.style.left=Math.min(Math.max(0,x-t.offsetWidth/2),w-t.offsetWidth)+'px';t.style.top=Math.max(0,y-t.offsetHeight-10)+'px'}
+function hideTip(wrap){const t=wrap.querySelector('.ctip');if(t)t.hidden=true}
+// Linie mit Punkten; invert: kleinere Werte oben (Tempo: schneller = oben)
+function lineChart(wrap,pts,{color,fmt,ref,refLabel,xLabel,invert=true,h=170}){
+  wrap.innerHTML='';const W=wrap.clientWidth||340,L=46,Rr=12,T=14,B=26,ih=h-T-B,iw=W-L-Rr;
+  const vs=pts.map(p=>p.v).concat(ref?[ref]:[]);let lo=Math.min(...vs),hi=Math.max(...vs);const pad=Math.max(4,(hi-lo)*0.15);lo-=pad;hi+=pad;
+  const X=i=>L+(pts.length===1?iw/2:pts[i].x!==undefined?(pts[i].x-pts[0].x)/((pts[pts.length-1].x-pts[0].x)||1)*iw:i/(pts.length-1)*iw);
+  const Y=v=>T+(invert?(v-lo)/(hi-lo):(hi-v)/(hi-lo))*ih;
+  const svg=svgEl('svg',{width:W,height:h,viewBox:`0 0 ${W} ${h}`,class:'chart'},wrap);
+  // runde Achsenwerte (z. B. 4:45 / 5:00 / 5:15) statt krummer Zwischenwerte
+  const stp=[1,2,5,10,15,30,60,120,300].find(x=>(hi-lo)/x<=3.2)||600;
+  for(let v=Math.ceil(lo/stp)*stp;v<=hi;v+=stp){const y=Y(v);svgEl('line',{x1:L,x2:W-Rr,y1:y,y2:y,class:'grid'},svg);svgEl('text',{x:L-8,y:y+4,class:'axis','text-anchor':'end'},svg).textContent=fmt(v)}
+  if(ref){const y=Y(ref);svgEl('line',{x1:L,x2:W-Rr,y1:y,y2:y,class:'refl'},svg);svgEl('text',{x:W-Rr,y:y-5,class:'axis','text-anchor':'end'},svg).textContent=refLabel||''}
+  // x-Beschriftung von hinten nach vorn, mindestens 40 px Abstand – nichts überlappt
+  for(let i=pts.length-1,last=1e9;i>=0;i--){const x=X(i);if(last-x<40)continue;last=x;
+    svgEl('text',{x:Math.min(x,W-Rr-8),y:h-6,class:'axis','text-anchor':'middle'},svg).textContent=xLabel(pts[i],i)}
+  if(pts.length>1)svgEl('polyline',{points:pts.map((p,i)=>`${X(i)},${Y(p.v)}`).join(' '),fill:'none',style:`stroke:${color}`,'stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'},svg);
+  pts.forEach((p,i)=>{svgEl('circle',{cx:X(i),cy:Y(p.v),r:4.5,style:`fill:${color}`,class:'dot'},svg);
+    const hit=svgEl('rect',{x:X(i)-Math.max(12,iw/pts.length/2),y:T,width:Math.max(24,iw/pts.length),height:ih,fill:'transparent'},svg);
+    const on=()=>chartTip(wrap,X(i),Y(p.v),p.tip);hit.addEventListener('pointerenter',on);hit.addEventListener('click',on)});
+  svg.addEventListener('pointerleave',()=>hideTip(wrap));
+}
+// Säulen mit Nulllinie
+function barChart(wrap,bars,{color,fmt,h=170,label}){
+  wrap.innerHTML='';const W=wrap.clientWidth||340,L=40,Rr=8,T=18,B=26,ih=h-T-B,iw=W-L-Rr;
+  const max=Math.max(1,...bars.map(b=>b.v)),nice=Math.ceil(max/5)*5||5;
+  const slot=iw/bars.length,bw=Math.min(24,slot-2);
+  const svg=svgEl('svg',{width:W,height:h,viewBox:`0 0 ${W} ${h}`,class:'chart'},wrap);
+  const Y=v=>T+ih-(v/nice)*ih;
+  [0,nice/2,nice].forEach(v=>{const y=Y(v);svgEl('line',{x1:L,x2:W-Rr,y1:y,y2:y,class:'grid'},svg);svgEl('text',{x:L-8,y:y+4,class:'axis','text-anchor':'end'},svg).textContent=fmt(v)});
+  bars.forEach((b,i)=>{const x=L+i*slot+(slot-bw)/2,y=Y(b.v),bh=T+ih-y;
+    if(b.v>0){const r=Math.min(4,bh,bw/2);svgEl('path',{d:`M${x},${T+ih}V${y+r}Q${x},${y} ${x+r},${y}H${x+bw-r}Q${x+bw},${y} ${x+bw},${y+r}V${T+ih}Z`,style:`fill:${color}`},svg)}
+    if(b.lab)svgEl('text',{x:x+bw/2,y:h-6,class:'axis','text-anchor':'middle'},svg).textContent=b.lab;
+    if(label&&i===bars.length-1&&b.v>0)svgEl('text',{x:x+bw/2,y:y-5,class:'val','text-anchor':'middle'},svg).textContent=fmt(b.v);
+    const hit=svgEl('rect',{x:L+i*slot,y:T,width:slot,height:ih,fill:'transparent'},svg);
+    const on=()=>chartTip(wrap,x+bw/2,y,b.tip);hit.addEventListener('pointerenter',on);hit.addEventListener('click',on)});
+  svg.addEventListener('pointerleave',()=>hideTip(wrap));
+}
+// Streckenskizze (ohne Kartenkacheln, funktioniert offline)
+function trackSvg(wrap,pts,color){
+  wrap.innerHTML='';const P=pts.filter(Boolean);if(P.length<2)return;
+  const lat0=P[0][0],mx=111320*Math.cos(lat0*Math.PI/180),xy=p=>p?[(p[1]-P[0][1])*mx,-(p[0]-lat0)*111132]:null;
+  const Q=pts.map(xy),F=Q.filter(Boolean),xs=F.map(q=>q[0]),ys=F.map(q=>q[1]);
+  const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+  const W=wrap.clientWidth||340,pad=16,sw=Math.max(1,maxX-minX),sh=Math.max(1,maxY-minY);
+  const sc=Math.min((W-2*pad)/sw,(260-2*pad)/sh),H=Math.min(260,sh*sc+2*pad);
+  const tx=q=>[pad+(q[0]-minX)*sc+((W-2*pad)-sw*sc)/2,pad+(q[1]-minY)*sc];
+  const svg=svgEl('svg',{width:W,height:H,viewBox:`0 0 ${W} ${H}`,class:'chart'},wrap);
+  let seg=[];const flush=()=>{if(seg.length>1)svgEl('polyline',{points:seg.join(' '),fill:'none',style:`stroke:${color}`,'stroke-width':3,'stroke-linejoin':'round','stroke-linecap':'round'},svg);seg=[]};
+  Q.forEach(q=>{if(!q){flush();return}const [x,y]=tx(q);seg.push(`${x.toFixed(1)},${y.toFixed(1)}`)});flush();
+  const s=tx(F[0]),e=tx(F[F.length-1]);
+  svgEl('circle',{cx:s[0],cy:s[1],r:6,style:'fill:var(--green)',class:'dot'},svg);svgEl('circle',{cx:e[0],cy:e[1],r:6,style:'fill:var(--red)',class:'dot'},svg);
+  // Maßstab: 1 km oder 500 m
+  const m=sw>1500?1000:sw>600?500:100,len=m*sc;
+  svgEl('line',{x1:W-pad-len,x2:W-pad,y1:H-8,y2:H-8,style:'stroke:var(--mut)','stroke-width':2},svg);
+  svgEl('text',{x:W-pad,y:H-13,class:'axis','text-anchor':'end'},svg).textContent=m>=1000?'1 km':m+' m';
+}
+// GPX-Datei für Strava, Garmin & Co.
+function gpxOf(r,pts){
+  const t0=new Date(r.date).getTime(),x=s=>esc(s);let segs='',cur='';
+  pts.forEach(p=>{if(!p){if(cur){segs+=`<trkseg>${cur}</trkseg>`;cur=''}return}
+    cur+=`<trkpt lat="${p[0]}" lon="${p[1]}"><time>${new Date(t0+p[2]*1000).toISOString()}</time></trkpt>`});
+  if(cur)segs+=`<trkseg>${cur}</trkseg>`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Leon Läuft" xmlns="http://www.topografix.com/GPX/1/1"><metadata><name>${x(r.name)}</name><time>${new Date(t0).toISOString()}</time></metadata><trk><name>${x(r.name)}</name><type>running</type>${segs}</trk></gpx>`;
+}
+async function exportGpx(){const r=runs.find(x=>x.id===curRun),t=r&&await trackGet(r.id);if(!t){toast('Für diesen Lauf ist keine Strecke gespeichert.');return}
+  await shareFile(`${ymd(new Date(r.date))}-${r.name.replace(/[^\wäöüÄÖÜß-]+/g,'-')}.gpx`,gpxOf(r,t),'application/gpx+xml')}
+
 /* ---------- Absturzschutz ----------
    iOS kann die Web-App im Hintergrund beenden (z. B. beim Wechsel in die
    Spotify-App). Darum wird der laufende Lauf alle 5 s und beim Verlassen in

@@ -271,6 +271,8 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
 .hic svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .hx{flex:1;min-width:0}
 .hk-run{--c:var(--green)}.hk-iv{--c:var(--orange)}.hk-race{--c:var(--purple)}.hk-coach{--c:var(--blue)}
+.linkcell{width:100%;background:none;border:0;color:var(--blue);font-size:17px;font-family:inherit;text-align:left;cursor:pointer}
+#toast{position:fixed;left:16px;right:16px;top:calc(env(safe-area-inset-top) + 10px);z-index:200;background:rgba(30,30,32,.94);color:#fff;font-size:15px;line-height:1.35;padding:12px 16px;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.25)}
 </style>
 </head>
 <body>
@@ -308,6 +310,8 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
     <div class="group"><ul class="tips">
       <li><svg viewBox="0 0 24 24"><path d="M3 10v4h4l5 4V6L7 10H3z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg><span>Klingel-Schalter auf laut stellen</span></li>
       <li><svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg><span>Der Bildschirm bleibt während des Laufs an</span></li>
+      <li id="wltip" hidden style="color:var(--red)"><svg viewBox="0 0 24 24" style="stroke:var(--red)"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17v.5"/></svg><span>Dieses iPhone kann den Bildschirm nicht wach halten. Stell unter Einstellungen → Anzeige &amp; Helligkeit → Automatische Sperre auf „Nie“ – sonst pausiert die App, wenn der Bildschirm ausgeht.</span></li>
+      <li><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 16 0"/><path d="M12 12l3-3"/><circle cx="12" cy="12" r="1"/></svg><span>Musik im Kontrollzentrum steuern – nicht in die Spotify-App wechseln</span></li>
       <li><svg viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span>Musik zuerst starten, dann hier auf „Los geht's“</span></li>
     </ul></div>
     <div style="margin-top:24px"><button class="btn fill" style="font-size:20px;padding:18px" onclick="go()">Los geht's</button></div>
@@ -372,7 +376,7 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
 <div class="view" id="v-hist">
   <div class="large">Verlauf</div>
   <div id="histlist"></div>
-  <div style="margin-top:18px"><button class="btn" onclick="exportHist()">Verlauf exportieren</button></div>
+  <div style="margin-top:18px"><button class="btn" onclick="backupAll()">Backup erstellen</button></div>
 </div>
 
 <!-- DETAIL -->
@@ -418,9 +422,17 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
   <p class="foot">Glättung: Kalman-Filter, der Messungen nach ihrer Genauigkeit gewichtet. Doppler-Tempo: ruhigere Pace-Anzeige aus der vom iPhone gemessenen Geschwindigkeit.</p>
   <p class="foot">GPS misst oft etwas zu lang. Ein negativer Wert (z. B. −1) korrigiert das.</p>
   <div style="margin-top:22px"><button class="btn fill" onclick="testAudio()">Ton &amp; Sprache testen</button></div>
-  <p class="foot" style="margin-top:14px">Tipp: In Safari „Teilen → Zum Home-Bildschirm“ wählen und die App von dort starten. Trainings und Verlauf werden nur auf diesem Gerät gespeichert.</p>
+  <div class="head">Daten</div>
+  <div class="group">
+    <button class="cell linkcell" onclick="backupAll()">Backup erstellen</button>
+    <label class="cell linkcell">Backup wiederherstellen<input type="file" accept="application/json,.json" hidden onchange="restoreAll(this.files[0]);this.value=''"></label>
+  </div>
+  <p class="foot">Alle Daten liegen nur auf diesem iPhone. Das Backup enthält Vorlagen, Verlauf mit Strecken, Antonias Plan und Einstellungen – speichere es z. B. in „Dateien“. Beim Wiederherstellen werden die Daten auf diesem Gerät ersetzt; ein alter Verlauf-Export wird ergänzt.</p>
+  <p class="foot" style="margin-top:14px">Tipp: In Safari „Teilen → Zum Home-Bildschirm“ wählen und die App von dort starten.</p>
   <p class="foot" id="s-info" style="margin-top:14px"></p>
 </div>
+
+<div id="toast" hidden></div>
 
 <div class="tabbar" id="tabbar">
   <button data-v="home" onclick="show('home')"><svg viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 1.5M10 3h4"/></svg>Training</button>
@@ -430,12 +442,12 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
 </div>
 
 <script>
-const APP_VER='2026-11-04.1'; // bei Änderungen hochzählen – wird in den Einstellungen angezeigt
+const APP_VER='2026-11-04.2'; // bei Änderungen hochzählen – wird in den Einstellungen angezeigt
 /* ---------- Helfer ---------- */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=v=>parseInt(v)||0;
-const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){if(!LS.warned){LS.warned=1;setTimeout(()=>toast('Speichern fehlgeschlagen – Speicher voll? Bitte ein Backup erstellen und alte Läufe löschen.',8000),0)}return false}}};
 function fmtTime(sec){sec=Math.max(0,Math.round(sec));const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`}
 function fmtPace(p){if(!p||!isFinite(p)||p>1800)return '–:––';let m=Math.floor(p/60),s=Math.round(p%60);if(s===60){m++;s=0}return `${m}:${String(s).padStart(2,'0')}`}
 function fmtDist(m){return m<1000?`${Math.round(m)} m`:m%1000===0?`${m/1000} km`:`${(m/1000).toFixed(2).replace('.',',')} km`}
@@ -459,12 +471,12 @@ if(!LS.get('iv_mig3',false)){
     plans.push({id:'p'+(Date.now()-1),kind:'race',name:`${{'5k':'5 km','10k':'10 km','hm':'Halbmarathon'}[r.dist]||(r.km||10)+' km'} auf Zeit`,dist:r.dist||'10k',km:r.km||10,time:r.time||3000,ant:!!r.ant})}
   try{localStorage.setItem('iv_plans',JSON.stringify(plans));localStorage.setItem('iv_mig3','true')}catch(e){}
 }
-let history=LS.get('iv_hist',[]);
+let runs=LS.get('iv_hist',[]); // alle gespeicherten Läufe (früher "history", kollidierte mit window.history)
 let settings=Object.assign({beep:true,voice:true,hints:true,volume:0.8,rate:1,corr:0,startLocked:true,autoLock:true,musicMode:false,kalman:true,doppler:true,berlin:true,vboost:1.6},LS.get('iv_settings',{}));
 // Einmalige Umstellung (v2): Musik-Modus aus, damit die Berliner Stimme spricht – sie liegt jetzt sauber über der Musik
 if((settings.ver||1)<2){settings.musicMode=false;settings.ver=2;try{if(localStorage.getItem('iv_settings'))LS.set('iv_settings',settings)}catch(e){}}
 const savePlans=()=>LS.set('iv_plans',plans);
-const saveHist=()=>LS.set('iv_hist',history);
+const saveHist=()=>LS.set('iv_hist',runs);
 function saveSettings(){LS.set('iv_settings',settings)}
 
 function buildSteps(p){
@@ -515,8 +527,8 @@ const runGoal=p=>p.goal==='time'?`${p.dur} min`:p.goal==='dist'?fmtDist(p.dist):
 function runDesc(p){return `${p.goal==='time'?`${p.dur} Minuten`:p.goal==='dist'?fmtDist(p.dist):'Freier Lauf'}${p.pace?` @ ${fmtPace(p.pace)} /km`:' im Wohlfühltempo'} · Ansage jeden Kilometer${p.pace?' mit Tempo-Hinweis':''}`}
 function renderHome(){
   $('#today').textContent=new Date().toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'});
-  const wk=history.filter(r=>Date.now()-new Date(r.date)<7*864e5);
-  $('#week').innerHTML=history.length?`<div class="group week"><div class="wt">Letzte 7 Tage</div>
+  const wk=runs.filter(r=>Date.now()-new Date(r.date)<7*864e5);
+  $('#week').innerHTML=runs.length?`<div class="group week"><div class="wt">Letzte 7 Tage</div>
     <div><b>${wk.length}</b><small>${wk.length===1?'Lauf':'Läufe'}</small></div>
     <div><b>${km2(wk.reduce((a,r)=>a+r.dist,0))}</b><small>km</small></div>
     <div><b>${fmtTime(wk.reduce((a,r)=>a+r.time,0))}</b><small>Zeit</small></div></div>`:'';
@@ -776,7 +788,7 @@ const spPace=p=>{const m=Math.floor(p/60),s=Math.round(p%60);return `${m} Minute
 const spDur=s=>(s>=60&&s%60===0)?`${s/60} ${s/60===1?'Minute':'Minuten'}`:`${s} Sekunden`;
 
 /* ---------- Wake Lock ---------- */
-async function requestWake(){try{if('wakeLock' in navigator&&R){R.wl=await navigator.wakeLock.request('screen')}}catch(e){}}
+async function requestWake(){if(!R||(R.wl&&!R.wl.released))return;try{if(!('wakeLock' in navigator))throw 0;R.wl=await navigator.wakeLock.request('screen');R.wlOk=true}catch(e){if(R)R.wlOk=false}const t=$('#wltip');if(t)t.hidden=!R||R.wlOk!==false}
 function releaseWake(){try{if(R&&R.wl){R.wl.release();R.wl=null}}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&R&&R.state==='run')requestWake()});
 
@@ -809,8 +821,6 @@ document.addEventListener('pointerdown',()=>{if(R)R.lastTouch=performance.now()}
 
 /* ---------- Lauf-Engine ---------- */
 let R=null;
-function hav(a,b){const r=Math.PI/180,R6=6371000,dLa=(b.lat-a.lat)*r,dLo=(b.lon-a.lon)*r;
-  const x=Math.sin(dLa/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dLo/2)**2;return 2*R6*Math.asin(Math.sqrt(x))}
 
 function startRun(id){const plan=plans.find(p=>p.id===id);if(plan)startPlan(plan,null,'home')}
 // sess: ID einer Antonia-Einheit (wird nach dem Lauf abgehakt), back: Ansicht nach Abbruch
@@ -820,7 +830,7 @@ function startPlan(plan,sess,back){
   $('#rtitle').textContent=plan.name;$('#rplan').textContent=plan.sum||summ(plan);$('#runwait').hidden=false;$('#runlive').hidden=true;
   $('#wseg').innerHTML=segHTML(R.steps);$('#rtl').innerHTML=$('#ltl').innerHTML=segHTML(R.steps,true);
   $('#v-run').classList.remove('paused');paintPauseBtn();setRunKind();
-  show('run');paintGps();
+  show('run');paintGps();$('#wltip').hidden=true;requestWake();
   R.watch=navigator.geolocation.watchPosition(onPos,onPosErr,{enableHighAccuracy:true,maximumAge:0,timeout:20000});
 }
 // Farbe des Laufbildschirms nach Art: Lauf grün, Rennen lila, Intervalle orange
@@ -918,7 +928,8 @@ function logStep(){
   const s=R.steps[R.i];
   R.log.push({type:s.type,label:s.label,target:s.type==='run'?s.pace:null,tdist:s.dist||null,dist:R.stepDist,time:R.stepTime});
 }
-function next(){logStep();if(R.i+1>=R.steps.length)finish(false);else enterStep(R.i+1)}
+// carry: Sekunden, die über das Ende des Abschnitts hinausliefen (z. B. Bildschirm war kurz aus) – zählen zum nächsten
+function next(carry=0){logStep();if(R.i+1>=R.steps.length)finish(false);else{enterStep(R.i+1);R.stepTime=Math.max(0,carry)}}
 function skipStep(){if(R&&R.state==='run'&&confirm('Abschnitt überspringen?'))next()}
 function togglePause(){
   if(!R||R.state!=='run')return;R.paused=!R.paused;R.win=[];R.kf=null;R.spd=null;R.last=performance.now();
@@ -957,7 +968,7 @@ function tick(){
     }
   }else{
     const rem=s.dur-R.stepTime;
-    if(rem<=0){next();return}
+    if(rem<=0){next(-rem);return}
     const c=Math.ceil(rem);
     if(c<=3&&R.flags.cnt!==c){R.flags.cnt=c;beep(880,0.15)}
     if(s.type==='rest'&&s.dur>=20&&rem<=10&&!R.flags.t10){R.flags.t10=1;cue('t10','Noch 10 Sekunden',false,['@t10'])}
@@ -1040,7 +1051,7 @@ function finish(early){
   let id=null;
   if(R.total>=10){
     id='r'+Date.now();
-    history.push({id,kind:R.kind,date:R.started,name:R.plan.name,time:R.total,dist:R.totalDist,pace:R.totalDist>30?R.total/R.totalDist*1000:0,log:R.log});
+    runs.push({id,kind:R.kind,date:R.started,name:R.plan.name,time:R.total,dist:R.totalDist,pace:R.totalDist>30?R.total/R.totalDist*1000:0,log:R.log});
     saveHist();
     if(R.sess&&!early)coachDone(R.sess,id);
   }
@@ -1238,7 +1249,7 @@ function startSess(id){const s=coach&&coach.sessions.find(x=>x.id===id);if(!s)re
 function toggleDone(){const s=coach.sessions.find(x=>x.id===curSess);if(!s)return;s.done=s.done?null:{run:null,date:new Date().toISOString()};saveCoach();renderSess()}
 function renderSess(){
   const s=coach&&coach.sessions.find(x=>x.id===curSess);if(!s){show('coach');return}
-  const p=sessPlan(s),run=s.done&&s.done.run&&history.find(r=>r.id===s.done.run);
+  const p=sessPlan(s),run=s.done&&s.done.run&&runs.find(r=>r.id===s.done.run);
   let rows='';
   if(p.warm)rows+=`<div class="cell"><span class="l">Warm-up</span><span class="v">${p.warm} min locker</span></div>`;
   p.sets.forEach(x=>{
@@ -1349,16 +1360,16 @@ const kindOf=r=>r.kind||(/^Rennen/.test(r.name)?'race':/ · Woche \d+$/.test(r.n
 let histF=LS.get('iv_histf','all');
 function setHistF(k){histF=k;LS.set('iv_histf',k);renderHist()}
 function renderHist(){
-  const present=Object.keys(HK).filter(k=>history.some(r=>kindOf(r)===k));
+  const present=Object.keys(HK).filter(k=>runs.some(r=>kindOf(r)===k));
   if(histF!=='all'&&!present.includes(histF))histF='all';
-  const h=history.slice().reverse().filter(r=>histF==='all'||kindOf(r)===histF);
+  const h=runs.slice().reverse().filter(r=>histF==='all'||kindOf(r)===histF);
   $('#histlist').innerHTML=(present.length>1?`<div class="hfilter"><button class="${histF==='all'?'on':''}" onclick="setHistF('all')">Alle</button>${present.map(k=>`<button class="hk-${k} ${histF===k?'on':''}" onclick="setHistF('${k}')">${HK[k].t}</button>`).join('')}</div>`:'')+
    (h.length?`<div class="group">${h.map(r=>{const k=kindOf(r);return `<div class="cell runrow hrow" onclick="showRun('${r.id}')"><span class="hic hk-${k}">${IC[HK[k].ic]}</span><div class="hx"><div class="t"><b>${esc(r.name)}</b><span class="s" style="margin:0">${fmtDate(r.date)}</span></div>
   <div class="s">${HK[k].t} · ${km2(r.dist)} km · ${fmtTime(r.time)} · Ø ${fmtPace(r.pace)}/km</div></div></div>`}).join('')}</div>`:'<p class="foot">Noch keine Läufe gespeichert.</p>');
 }
 let curRun=null;
 function showRun(id){
-  const r=history.find(x=>x.id===id);if(!r)return;curRun=id;
+  const r=runs.find(x=>x.id===id);if(!r)return;curRun=id;
   const rows=r.log.map(l=>{
     const pace=l.dist>30?l.time/l.dist*1000:0;
     let col='';if(l.target&&pace){const d=pace-l.target;col=Math.abs(d)<=5?'var(--green)':Math.abs(d)<=15?'var(--orange)':'var(--red)'}
@@ -1370,11 +1381,62 @@ function showRun(id){
   <div class="group"><table><tr><th>Abschnitt</th><th>Dist.</th><th>Zeit</th><th>Pace</th></tr>${rows}</table></div>`;
   show('detail');
 }
-function delRun(){if(confirm('Diesen Lauf löschen?')){history=history.filter(x=>x.id!==curRun);saveHist();show('hist')}}
-async function exportHist(){
-  const txt=JSON.stringify(history,null,2);
-  try{if(navigator.share){await navigator.share({title:'Leon Läuft – Verlauf',text:txt});return}}catch(e){if(e&&e.name==='AbortError')return}
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'application/json'}));a.download='leon-laeuft-verlauf.json';a.click();
+function delRun(){if(confirm('Diesen Lauf löschen?')){runs=runs.filter(x=>x.id!==curRun);saveHist();show('hist')}}
+/* ---------- Streckenspeicher (IndexedDB) ----------
+   GPS-Strecken sind zu groß für localStorage und liegen deshalb in IndexedDB
+   (Schlüssel = Lauf-ID, Wert = [[lat, lon, sek], …], null = Pause). */
+const TDB={p:null,open(){if(!this.p)this.p=new Promise(res=>{try{const r=indexedDB.open('leon-laeuft',1);
+  r.onupgradeneeded=()=>r.result.createObjectStore('tracks');r.onsuccess=()=>res(r.result);r.onerror=()=>res(null)}catch(e){res(null)}});return this.p}};
+async function trackTx(mode,fn){const db=await TDB.open();if(!db)return null;
+  return new Promise(res=>{try{const t=db.transaction('tracks',mode),q=fn(t.objectStore('tracks'));t.oncomplete=()=>res(q&&q.result!==undefined?q.result:true);t.onerror=t.onabort=()=>res(null)}catch(e){res(null)}})}
+const trackPut=(id,pts)=>trackTx('readwrite',st=>st.put(pts,id));
+const trackGet=id=>trackTx('readonly',st=>st.get(id));
+const trackDel=id=>trackTx('readwrite',st=>st.delete(id));
+async function trackAll(){const db=await TDB.open();if(!db)return [];
+  return new Promise(res=>{const out=[];try{const c=db.transaction('tracks').objectStore('tracks').openCursor();
+    c.onsuccess=()=>{const cur=c.result;if(cur){out.push([cur.key,cur.value]);cur.continue()}else res(out)};c.onerror=()=>res(out)}catch(e){res(out)}})}
+
+/* ---------- Daten sichern ----------
+   Backup = alle App-Daten aus localStorage + Strecken als eine JSON-Datei.
+   Beim Wiederherstellen wird alles geprüft und gesäubert (IDs, Arten), weil
+   die Werte später in HTML und onclick-Attributen landen. */
+const BK_KEYS=['iv_plans','iv_hist','iv_settings','iv_coach','iv_kind','iv_tab','iv_histf','iv_mig3'];
+const safeId=x=>typeof x==='string'&&/^[\w-]{1,40}$/.test(x);
+const rid=pre=>pre+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+function toast(msg,ms=4000){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,ms)}
+async function shareFile(name,text,type){
+  const f=new File([text],name,{type});
+  try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:name});return}}catch(e){if(e&&e.name==='AbortError')return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+}
+async function backupAll(){
+  const d={app:'leon-laeuft',ver:1,created:new Date().toISOString(),ls:{},tracks:await trackAll()};
+  BK_KEYS.forEach(k=>{try{const v=localStorage.getItem(k);if(v!=null)d.ls[k]=v}catch(e){}});
+  await shareFile(`leon-laeuft-backup-${ymd(new Date())}.json`,JSON.stringify(d),'application/json');
+}
+function cleanRuns(a){return (Array.isArray(a)?a:[]).filter(r=>r&&typeof r==='object').map(r=>({...r,id:safeId(r.id)?r.id:rid('r'),kind:HK[r.kind]?r.kind:undefined,log:Array.isArray(r.log)?r.log:[]}))}
+function cleanPlans(a){return (Array.isArray(a)?a:[]).filter(p=>p&&typeof p==='object'&&KINDS[p.kind]).map(p=>({...p,id:safeId(p.id)?p.id:rid('p')}))}
+function cleanCoach(c){if(!c||typeof c!=='object'||!Array.isArray(c.sessions)||!c.cfg)return null;
+  return c.sessions.every(s=>s&&safeId(s.id)&&KIND[s.kind])?c:null}
+async function restoreAll(file){
+  if(!file)return;
+  let d;try{d=JSON.parse(await file.text())}catch(e){alert('Die Datei ist kein gültiges Backup.');return}
+  if(Array.isArray(d)){ // alter Verlauf-Export: Läufe ergänzen, sonst nichts ändern
+    const add=cleanRuns(d).filter(r=>!runs.some(x=>x.id===r.id));
+    if(!confirm(`${add.length} Läufe aus dem alten Verlauf-Export übernehmen?`))return;
+    runs=runs.concat(add).sort((a,b)=>new Date(a.date)-new Date(b.date));saveHist();toast(`${add.length} Läufe übernommen`);renderHist();return;
+  }
+  if(!d||d.app!=='leon-laeuft'||!d.ls||typeof d.ls!=='object'){alert('Die Datei ist kein Backup von Leon Läuft.');return}
+  const get=k=>{try{return typeof d.ls[k]==='string'?JSON.parse(d.ls[k]):undefined}catch(e){return undefined}};
+  const pl=cleanPlans(get('iv_plans')),rs=cleanRuns(get('iv_hist')),co=cleanCoach(get('iv_coach')),st=get('iv_settings');
+  if(!confirm(`Backup vom ${fmtDate(d.created)} wiederherstellen?\n\n${pl.length} Vorlagen, ${rs.length} Läufe${co?', Antonias Plan':''}.\n\nDie aktuellen Daten auf diesem Gerät werden dabei ersetzt.`))return;
+  BK_KEYS.forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});
+  LS.set('iv_plans',pl);LS.set('iv_hist',rs);if(co)LS.set('iv_coach',co);
+  if(st&&typeof st==='object')LS.set('iv_settings',st);
+  LS.set('iv_mig3',true);
+  const kd=get('iv_kind');if(KINDS[kd])LS.set('iv_kind',kd);
+  for(const [id,pts] of (Array.isArray(d.tracks)?d.tracks:[]))if(safeId(id)&&Array.isArray(pts))await trackPut(id,pts);
+  location.reload();
 }
 
 /* ---------- Init ---------- */

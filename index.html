@@ -6,12 +6,12 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Intervall">
+<meta name="apple-mobile-web-app-title" content="Leon Läuft">
 <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
 <link rel="apple-touch-icon" id="icon">
-<title>Intervall-Lauf</title>
+<title>Leon Läuft</title>
 <script src="voice.js?v=8fb04afdc9"></script>
 <script>
 // App-Icon zur Laufzeit erzeugen (für "Zum Home-Bildschirm")
@@ -166,8 +166,9 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
 .next{display:flex;align-items:center;gap:10px;padding:12px 16px;margin-top:12px;font-size:15px}
 .next small{color:var(--mut);font-size:13px;flex:none}
 .next i{width:8px;height:8px;border-radius:50%;background:var(--c,var(--mut));flex:none}
-.next span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ctl{display:grid;grid-template-columns:repeat(3,1fr);margin-top:18px}
+.next span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.next .link{flex:none;font-size:15px;padding:0 0 0 6px}
+.ctl{display:grid;grid-template-columns:repeat(2,1fr);margin-top:18px}
 .cbtn{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--mut);font-size:13px;padding:0}
 .cbtn .ci{width:64px;height:64px;border-radius:50%;background:var(--fill);color:var(--tx);display:flex;align-items:center;justify-content:center;transition:transform .1s}
 .cbtn:active .ci{transform:scale(.92)}
@@ -250,6 +251,26 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
 .plan .when{font-size:13px;font-weight:600;color:var(--c);text-transform:uppercase;letter-spacing:.2px;margin-bottom:3px}
 .plan .play.c{background:var(--c);box-shadow:0 4px 14px color-mix(in srgb,var(--c) 40%,transparent)}
 .plan .why2{font-size:14px;color:var(--mut);line-height:1.4;margin-top:10px}
+/* Trainingsarten */
+#v-run[data-k=run][data-t=run]{--ac:var(--green)}#v-run[data-k=race][data-t=run]{--ac:var(--purple)}
+#lock[data-k=run][data-t=run]{--ac:#30d158}#lock[data-k=race][data-t=run]{--ac:#bf5af2}
+#v-run[data-k=run] .k-run,#lock[data-k=run] .k-run{--c:var(--green)}
+#v-run[data-k=race] .k-run,#lock[data-k=race] .k-run{--c:var(--purple)}
+.segc.kinds{max-width:none;margin:2px 0 14px}
+.segc.kinds button{font-size:15px;padding:8px 4px}
+.pk-run{--c:var(--green)}.pk-iv{--c:var(--orange)}.pk-race{--c:var(--purple)}
+.pk-run .play,.pk-iv .play,.pk-race .play{background:var(--c);box-shadow:0 4px 14px color-mix(in srgb,var(--c) 40%,transparent)}
+.k-race{--c:var(--purple)}
+/* Verlauf */
+.hfilter{display:flex;gap:6px;overflow-x:auto;margin:0 0 14px;scrollbar-width:none}
+.hfilter::-webkit-scrollbar{display:none}
+.hfilter button{flex:none;border:0;border-radius:99px;padding:7px 14px;font-size:14px;font-weight:600;background:var(--fill);color:var(--tx)}
+.hfilter button.on{background:var(--c,var(--blue));color:#fff}
+.hrow{display:flex!important;align-items:center;gap:12px}
+.hic{width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--c) 16%,transparent);color:var(--c)}
+.hic svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.hx{flex:1;min-width:0}
+.hk-run{--c:var(--green)}.hk-iv{--c:var(--orange)}.hk-race{--c:var(--purple)}.hk-coach{--c:var(--blue)}
 </style>
 </head>
 <body>
@@ -259,17 +280,17 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
   <div class="kicker" id="today"></div>
   <div class="large">Training</div>
   <div id="week"></div>
-  <div id="racecard"></div>
+  <div class="segc kinds" id="kindsw"></div>
   <div id="plans"></div>
-  <button class="btn" onclick="newPlan()">＋ Neues Training</button>
+  <button class="btn" id="newbtn" onclick="newPlan()"></button>
 </div>
 
 <!-- EDITOR -->
 <div class="view" id="v-edit">
-  <div class="navbar"><button onclick="show('home')">Abbrechen</button><b>Training</b><button onclick="savePlan()">Sichern</button></div>
+  <div class="navbar"><button onclick="show('home')">Abbrechen</button><b id="edtitle">Training</b><button onclick="savePlan()">Sichern</button></div>
   <div id="edbody"></div>
   <p class="foot" id="edsum"></p>
-  <div id="eddelwrap" style="margin-top:22px"><button class="btn red" onclick="delPlan()">Training löschen</button></div>
+  <div id="eddelwrap" style="margin-top:22px"><button class="btn red" onclick="delPlan()">Vorlage löschen</button></div>
 </div>
 
 <!-- RUN -->
@@ -312,10 +333,9 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
       <div><b id="rdist">0,00</b><small>km gesamt</small></div>
       <div><b id="rcount">–</b><small id="rcountl">Intervall</small></div>
     </div>
-    <div class="group next"><small>Danach</small><i id="rnextdot"></i><span id="rnext"></span></div>
+    <div class="group next"><small>Danach</small><i id="rnextdot"></i><span id="rnext"></span><button class="link" id="rskip" onclick="skipStep()">Überspringen</button></div>
     <div class="ctl">
       <button class="cbtn" onclick="togglePause()"><span class="ci pz" id="rpauseic"></span><span id="rpauselbl">Pause</span></button>
-      <button class="cbtn" id="rskip" onclick="skipStep()"><span class="ci"><svg viewBox="0 0 24 24"><path d="M5 5.5v13l9-6.5z"/><rect x="16" y="5.5" width="3" height="13" rx="1"/></svg></span><span>Überspringen</span></button>
       <button class="cbtn" onclick="endEarly()"><span class="ci st"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg></span><span>Beenden</span></button>
     </div>
   </div>
@@ -337,12 +357,6 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
     <div class="txt"><span>Zum Entsperren schieben</span></div>
     <div class="thumb" id="thumb"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
   </div>
-</div>
-
-<!-- RENNMODUS -->
-<div class="view" id="v-race">
-  <div class="navbar"><button onclick="show('home')">‹ Training</button><b>Rennen</b><span style="min-width:80px"></span></div>
-  <div id="racebody"></div>
 </div>
 
 <!-- ANTONIA-MODUS -->
@@ -416,7 +430,7 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
 </div>
 
 <script>
-const APP_VER='2026-11-03.5'; // bei Änderungen hochzählen – wird in den Einstellungen angezeigt
+const APP_VER='2026-11-04.1'; // bei Änderungen hochzählen – wird in den Einstellungen angezeigt
 /* ---------- Helfer ---------- */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -429,8 +443,22 @@ function km2(m){return (m/1000).toFixed(2).replace('.',',')}
 function fmtDate(iso){return new Date(iso).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}
 
 /* ---------- Daten ---------- */
-function defaultPlan(){return {id:'p'+Date.now(),name:'5 × 1000 m',warm:10,cool:5,sets:[{reps:5,dist:1000,pace:240,rest:120}]}}
+/* Vorlagen haben eine Art (kind):
+   run  = Lauf: Ziel Dauer (dur, min), Distanz (dist, m) oder frei; optional Zieltempo (pace, s/km)
+   iv   = Intervalle: warm, cool, sets [{reps, dist, pace, rest}]
+   race = Rennen: dist ('5k'|'10k'|'hm'|'free'), km (bei frei), time (Zielzeit s), ant (Ansprache Antonia) */
+const KINDS={run:{t:'Lauf',nw:'Neuer Lauf'},iv:{t:'Intervalle',nw:'Neues Intervalltraining'},race:{t:'Rennen',nw:'Neues Rennen'}};
+function defaultPlan(){return {id:'p'+Date.now(),kind:'iv',name:'5 × 1000 m',warm:10,cool:5,sets:[{reps:5,dist:1000,pace:240,rest:120}]}}
 let plans=LS.get('iv_plans',null)||[defaultPlan()];
+let kindSel=LS.get('iv_kind','iv');if(!KINDS[kindSel])kindSel='iv';
+// Einmalige Umstellung (v3): bisherige Trainings = Intervalle, Rennmodus-Einstellung → Renn-Vorlage, Beispiel-Lauf
+if(!LS.get('iv_mig3',false)){
+  plans.forEach(p=>{if(!p.kind)p.kind='iv'});
+  if(!plans.some(p=>p.kind==='run'))plans.unshift({id:'p'+(Date.now()-2),kind:'run',name:'Lockerer Lauf',goal:'time',dur:45,dist:8000,pace:0});
+  if(!plans.some(p=>p.kind==='race')){const r=LS.get('iv_race',null)||{dist:'10k',km:10,time:3000,ant:!!LS.get('iv_coach',null)};
+    plans.push({id:'p'+(Date.now()-1),kind:'race',name:`${{'5k':'5 km','10k':'10 km','hm':'Halbmarathon'}[r.dist]||(r.km||10)+' km'} auf Zeit`,dist:r.dist||'10k',km:r.km||10,time:r.time||3000,ant:!!r.ant})}
+  try{localStorage.setItem('iv_plans',JSON.stringify(plans));localStorage.setItem('iv_mig3','true')}catch(e){}
+}
 let history=LS.get('iv_hist',[]);
 let settings=Object.assign({beep:true,voice:true,hints:true,volume:0.8,rate:1,corr:0,startLocked:true,autoLock:true,musicMode:false,kalman:true,doppler:true,berlin:true,vboost:1.6},LS.get('iv_settings',{}));
 // Einmalige Umstellung (v2): Musik-Modus aus, damit die Berliner Stimme spricht – sie liegt jetzt sauber über der Musik
@@ -472,12 +500,19 @@ function show(v){
   window.scrollTo(0,0);
 }
 
-/* ---------- Home ---------- */
+/* ---------- Training (Startseite) ---------- */
 const stepSec=s=>s.type==='run'?s.dist/1000*s.pace:s.dur;
 function segHTML(steps,live){return steps.map(s=>`<i class="k-${s.type}" style="flex:${Math.max(1,Math.round(stepSec(s)))}">${live?'<b></b>':''}</i>`).join('')}
 const IC={clock:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
   route:'<svg viewBox="0 0 24 24"><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H16a3 3 0 0 0 0-6H8a3 3 0 0 1 0-6h7.5"/></svg>',
-  rep:'<svg viewBox="0 0 24 24"><path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/></svg>'};
+  rep:'<svg viewBox="0 0 24 24"><path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/></svg>',
+  flag:'<svg viewBox="0 0 24 24"><path d="M5 21V4"/><path d="M5 4h12l-2.5 4L17 12H5"/></svg>',
+  speed:'<svg viewBox="0 0 24 24"><path d="M4 16a8 8 0 1 1 16 0"/><path d="M12 16l4-5"/></svg>',
+  cal:'<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>'};
+const PLAY='<svg viewBox="0 0 24 24"><path d="M6 4.5v15l13-7.5z"/></svg>';
+// Lauf: Kurzbeschreibung von Ziel und Tempo
+const runGoal=p=>p.goal==='time'?`${p.dur} min`:p.goal==='dist'?fmtDist(p.dist):'Frei';
+function runDesc(p){return `${p.goal==='time'?`${p.dur} Minuten`:p.goal==='dist'?fmtDist(p.dist):'Freier Lauf'}${p.pace?` @ ${fmtPace(p.pace)} /km`:' im Wohlfühltempo'} · Ansage jeden Kilometer${p.pace?' mit Tempo-Hinweis':''}`}
 function renderHome(){
   $('#today').textContent=new Date().toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'});
   const wk=history.filter(r=>Date.now()-new Date(r.date)<7*864e5);
@@ -485,59 +520,125 @@ function renderHome(){
     <div><b>${wk.length}</b><small>${wk.length===1?'Lauf':'Läufe'}</small></div>
     <div><b>${km2(wk.reduce((a,r)=>a+r.dist,0))}</b><small>km</small></div>
     <div><b>${fmtTime(wk.reduce((a,r)=>a+r.time,0))}</b><small>Zeit</small></div></div>`:'';
-  const rD=raceDist(rcf)||10000;
-  $('#racecard').innerHTML=`<div class="group plan k-test"><div class="ptop"><div class="pinfo">
-      <div class="when">Rennmodus</div><h3>${raceName(rD)} auf Zeit</h3>
-      <div class="meta"><span>${IC.clock}Ziel ${fmtTime(rcf.time||0)}</span><span>${IC.route}Ø ${fmtPace(rcf.time/(rD/1000))} /km</span></div></div>
-      <button class="play c" onclick="openRace()" aria-label="Rennmodus"><svg viewBox="0 0 24 24"><path d="M6 4.5v15l13-7.5z"/></svg></button></div>
-    <div class="why2">Negativ-Split mit Ansagen jeden Kilometer – damit du am Anfang nicht überpacst.</div>
-    <div class="pact"><button onclick="openRace()">Einstellen</button><button onclick="startRace(rcf)">Starten</button></div></div>`;
-  $('#plans').innerHTML=plans.map(p=>{
+  $('#kindsw').innerHTML=Object.entries(KINDS).map(([k,v])=>`<button class="${kindSel===k?'on':''}" onclick="setKind('${k}')">${v.t}</button>`).join('');
+  const list=plans.filter(p=>p.kind===kindSel);
+  $('#plans').innerHTML=list.map(cardHTML).join('')||`<p class="foot" style="margin:4px 16px 14px">${{run:'Noch kein Lauf angelegt – z. B. „Sonntagslauf, 60 Minuten“.',iv:'Noch kein Intervalltraining angelegt.',race:'Noch kein Rennen angelegt – z. B. „Stadtlauf 10 km in 49:30“.'}[kindSel]}</p>`;
+  $('#newbtn').textContent='＋ '+KINDS[kindSel].nw;
+}
+function setKind(k){kindSel=k;LS.set('iv_kind',k);renderHome()}
+// Eine Karte – für alle Arten gleich aufgebaut: Name, Kennzahlen, Ablauf, ▶ startet, „Bearbeiten“ öffnet den Editor
+function cardHTML(p){
+  let meta=[],body='';
+  if(p.kind==='iv'){
     const reps=p.sets.reduce((a,s)=>a+s.reps,0),fast=p.sets.reduce((a,s)=>a+s.reps*s.dist,0);
     const lines=p.sets.map(s=>`<li>${s.reps} × ${s.dist} m @ ${fmtPace(s.pace)}${s.rest?` <span class="m">· ${fmtTime(s.rest)} Pause</span>`:''}</li>`).join('');
     const wc=[p.warm?p.warm+' min Warm-up':'',p.cool?p.cool+' min Cool-down':''].filter(Boolean).join(' · ');
-    return `<div class="group plan">
-      <div class="ptop"><div class="pinfo"><h3>${esc(p.name)}</h3>
-        <div class="meta"><span>${IC.clock}${Math.round(estSec(p)/60)} min</span><span>${IC.route}${km2(fast)} km schnell</span><span>${IC.rep}${reps}</span></div></div>
-        <button class="play" onclick="startRun('${p.id}')" aria-label="Starten"><svg viewBox="0 0 24 24"><path d="M6 4.5v15l13-7.5z"/></svg></button></div>
-      <div class="seg">${segHTML(buildSteps(p))}</div>
-      <ul class="lines">${lines}${wc?`<li style="--c:var(--green)"><span class="m">${wc}</span></li>`:''}</ul>
-      <div class="pact"><button onclick="editPlan('${p.id}')">Bearbeiten</button><button onclick="startRun('${p.id}')">Starten</button></div></div>`}).join('')||'<p class="foot">Noch kein Training angelegt.</p>';
+    meta=[`${IC.clock}${Math.round(estSec(p)/60)} min`,`${IC.route}${km2(fast)} km schnell`,`${IC.rep}${reps}`];
+    body=`<div class="seg">${segHTML(buildSteps(p))}</div><ul class="lines">${lines}${wc?`<li style="--c:var(--green)"><span class="m">${wc}</span></li>`:''}</ul>`;
+  }else if(p.kind==='run'){
+    meta=[`${p.goal==='dist'?IC.route:IC.clock}${runGoal(p)}`,`${IC.speed}${p.pace?fmtPace(p.pace)+' /km':'Wohlfühltempo'}`];
+    body=`<div class="why2">${runDesc(p)}</div>`;
+  }else{
+    const D=raceDist(p),segs=raceSplits(D,p.time),mid=segs[Math.floor(segs.length/2)];
+    meta=[`${IC.flag}${raceName(D)}`,`${IC.clock}Ziel ${fmtTime(p.time)}`,`${IC.speed}Ø ${fmtPace(p.time/(D/1000))}`];
+    body=`<div class="seg">${segs.map(s=>`<i class="k-${s.o>0?'easy':s.o<0?'int':'race'}" style="flex:${Math.round(s.to-s.from)}"></i>`).join('')}</div>
+      <div class="why2">Negativ-Split ${fmtPace(segs[0].pace)} → ${fmtPace(mid.pace)} → ${fmtPace(segs[segs.length-1].pace)} /km${p.ant?' · Ansprache Antonia':''}</div>`;
+  }
+  return `<div class="group plan pk-${p.kind}"><div class="ptop"><div class="pinfo"><h3>${esc(p.name)}</h3>
+      <div class="meta">${meta.map(m=>`<span>${m}</span>`).join('')}</div></div>
+      <button class="play" onclick="startTpl('${p.id}')" aria-label="Starten">${PLAY}</button></div>
+    ${body}<div class="pact"><button onclick="editPlan('${p.id}')">Bearbeiten</button></div></div>`;
+}
+function startTpl(id){
+  const p=plans.find(x=>x.id===id);if(!p)return;
+  if(p.kind==='run')startFree(p,'home');else if(p.kind==='race')startRace(p,null,'home');else startPlan(p,null,'home');
 }
 
-/* ---------- Editor ---------- */
+/* ---------- Editor (je Art) ---------- */
 let ed=null,edNew=false;
-function newPlan(){ed={id:'p'+Date.now(),name:'Neues Training',warm:10,cool:5,sets:[{reps:5,dist:1000,pace:240,rest:120}]};edNew=true;renderEd();show('edit')}
+function newPlan(){
+  const id='p'+Date.now();
+  ed=kindSel==='run'?{id,kind:'run',name:'Neuer Lauf',goal:'time',dur:45,dist:8000,pace:0}
+    :kindSel==='race'?{id,kind:'race',name:'Neues Rennen',dist:'10k',km:10,time:3000,ant:!!coach}
+    :{id,kind:'iv',name:'Neues Intervalltraining',warm:10,cool:5,sets:[{reps:5,dist:1000,pace:240,rest:120}]};
+  edNew=true;renderEd();show('edit');
+}
 function editPlan(id){ed=JSON.parse(JSON.stringify(plans.find(p=>p.id===id)));edNew=false;renderEd();show('edit')}
+function segE(key,opts,style=''){return `<div class="segc"${style?` style="${style}"`:''}>${opts.map(([v,l])=>`<button class="${ed[key]===v?'on':''}" onclick="edSet('${key}',${JSON.stringify(v).replace(/"/g,"'")})">${l}</button>`).join('')}</div>`}
+function edSet(k,v){ed[k]=v;if(k==='dist'&&ed.kind==='race'&&RACE_T[v])ed.time=RACE_T[v];renderEd()}
+// Zeit h:mm:ss bzw. Tempo m:ss als Zahlenfelder
+function hmsIn(t,fn){const h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=t%60,z=x=>t?String(x).padStart(2,'0'):'';
+  return `<span class="pace"><input type="number" inputmode="numeric" min="0" placeholder="0" value="${h||''}" oninput="${fn}('h',this.value)">:<input type="number" inputmode="numeric" min="0" max="59" placeholder="mm" value="${z(m)}" oninput="${fn}('m',this.value)">:<input type="number" inputmode="numeric" min="0" max="59" placeholder="ss" value="${z(s)}" oninput="${fn}('s',this.value)"></span>`}
+function setHms(t,part,v){let h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=t%60;v=num(v);if(part==='h')h=v;else if(part==='m')m=Math.min(59,v);else s=Math.min(59,v);return h*3600+m*60+s}
+function edTime(part,v){ed.time=setHms(ed.time||0,part,v);renderRaceSplits(raceDist(ed),ed.time)}
+function edRunPace(k,v){let m=Math.floor(ed.pace/60),s=ed.pace%60;if(k==='m')m=num(v);else s=Math.min(59,num(v));ed.pace=Math.max(120,m*60+s);ed.lastPace=ed.pace;edSum()}
+function edSum(){
+  const t=ed.kind==='iv'?summ(ed)+' (nach dem letzten Intervall entfällt die Pause)':ed.kind==='run'?runDesc(ed):'';
+  $('#edsum').textContent=t;
+}
 function renderEd(){
-  $('#eddelwrap').hidden=edNew;
-  $('#edbody').innerHTML=`
-  <div class="group"><label class="cell"><span class="l">Name</span><input type="text" value="${esc(ed.name)}" oninput="ed.name=this.value"></label></div>
-  <div class="head">Aufwärmen</div>
-  <div class="group"><label class="cell"><span class="l">Warm-up (Minuten)</span><input type="number" inputmode="numeric" min="0" value="${ed.warm}" oninput="ed.warm=num(this.value);edSum()"></label></div>
-  ${ed.sets.map((s,i)=>`
-  <div class="head" style="display:flex;justify-content:space-between;align-items:center"><span>Satz ${i+1}</span>${ed.sets.length>1?`<button class="link red" onclick="rmSet(${i})">Entfernen</button>`:''}</div>
-  <div class="group">
-    <label class="cell"><span class="l">Wiederholungen</span><input type="number" inputmode="numeric" min="1" value="${s.reps}" oninput="ed.sets[${i}].reps=Math.max(1,num(this.value));edSum()"></label>
-    <label class="cell"><span class="l">Distanz (m)</span><input type="number" inputmode="numeric" min="50" step="50" value="${s.dist}" oninput="ed.sets[${i}].dist=Math.max(50,num(this.value));edSum()"></label>
-    <div class="cell"><span class="l">Pace (min/km)</span><span class="pace"><input type="number" inputmode="numeric" min="1" value="${Math.floor(s.pace/60)}" oninput="setPace(${i},'m',this.value)">:<input type="number" inputmode="numeric" min="0" max="59" value="${String(s.pace%60).padStart(2,'0')}" oninput="setPace(${i},'s',this.value)"></span></div>
-    <label class="cell"><span class="l">Pause danach (Sek.)</span><input type="number" inputmode="numeric" min="0" value="${s.rest}" oninput="ed.sets[${i}].rest=num(this.value);edSum()"></label>
-  </div>`).join('')}
-  <div style="margin-top:14px"><button class="btn" onclick="addSet()">Weiteren Satz hinzufügen</button></div>
-  <div class="head">Abwärmen</div>
-  <div class="group"><label class="cell"><span class="l">Cool-down (Minuten)</span><input type="number" inputmode="numeric" min="0" value="${ed.cool}" oninput="ed.cool=num(this.value);edSum()"></label></div>`;
+  $('#edtitle').textContent=KINDS[ed.kind].t;$('#eddelwrap').hidden=edNew;
+  const name=`<div class="group"><label class="cell"><span class="l">Name</span><input type="text" value="${esc(ed.name)}" oninput="ed.name=this.value"></label></div>`;
+  let h='';
+  if(ed.kind==='run'){
+    h=`${name}
+    <div class="head">Ziel</div>
+    <div class="group">
+      <div class="cell"><span class="l">Ziel</span>${segE('goal',[['time','Dauer'],['dist','Distanz'],['free','Frei']])}</div>
+      ${ed.goal==='time'?`<label class="cell"><span class="l">Dauer (Minuten)</span><input type="number" inputmode="numeric" min="1" value="${ed.dur}" oninput="ed.dur=Math.max(1,num(this.value));edSum()"></label>`:''}
+      ${ed.goal==='dist'?`<label class="cell"><span class="l">Distanz (km)</span><input type="number" inputmode="decimal" step="0.5" min="0.5" value="${ed.dist/1000}" oninput="ed.dist=Math.round((parseFloat(String(this.value).replace(',','.'))||0)*1000);edSum()"></label>`:''}
+    </div>
+    <p class="foot">${ed.goal==='time'?'Nach Ablauf der Zeit ist der Lauf beendet.':ed.goal==='dist'?'Nach der Distanz ist der Lauf beendet; 100 m vorher gibt es eine Ansage.':'Ohne Ziel – du beendest den Lauf selbst.'}</p>
+    <div class="head">Tempo</div>
+    <div class="group">
+      <label class="cell"><span class="l">Zieltempo</span><input class="sw" type="checkbox" ${ed.pace?'checked':''} onchange="ed.pace=this.checked?(ed.lastPace||330):0;renderEd()"></label>
+      ${ed.pace?`<div class="cell"><span class="l">Tempo (min/km)</span><span class="pace"><input type="number" inputmode="numeric" min="2" value="${Math.floor(ed.pace/60)}" oninput="edRunPace('m',this.value)">:<input type="number" inputmode="numeric" min="0" max="59" value="${String(ed.pace%60).padStart(2,'0')}" oninput="edRunPace('s',this.value)"></span></div>`:''}
+    </div>
+    <p class="foot">Jeden Kilometer hörst du dein Tempo.${ed.pace?' Weichst du mehr als 15 s/km vom Zieltempo ab, sagt die App, ob du schneller oder langsamer laufen sollst.':' Mit Zieltempo bekommst du zusätzlich Hinweise, ob du schneller oder langsamer laufen sollst.'}</p>`;
+  }else if(ed.kind==='race'){
+    h=`${name}
+    <div class="head">Rennen</div>
+    <div class="group">
+      <div class="cell"><span class="l">Strecke</span>${segE('dist',[['5k','5 km'],['10k','10 km'],['hm','Halbm.'],['free','Frei']])}</div>
+      ${ed.dist==='free'?`<label class="cell"><span class="l">Distanz (km)</span><input type="number" inputmode="decimal" step="0.1" min="1" value="${ed.km}" oninput="ed.km=parseFloat(String(this.value).replace(',','.'))||0;renderRaceSplits(raceDist(ed),ed.time)"></label>`:''}
+      <div class="cell"><span class="l">Zielzeit</span>${hmsIn(ed.time||0,'edTime')}</div>
+      <div class="cell"><span class="l">Ansprache</span>${segE('ant',[[false,'Neutral'],[true,'Antonia']],'max-width:190px')}</div>
+    </div>
+    <div class="head">Renneinteilung (Negativ-Split)</div>
+    <div class="group" id="rsplits"></div>
+    <p class="foot">Der erste Kilometer ist etwas ruhiger, die letzten zwei etwas schneller – in Summe genau deine Zielzeit. Jeden Kilometer hörst du Zwischenzeit und Abstand zum Plan, auf den ersten 2 km wirst du gebremst, wenn du zu schnell losläufst. Kein Warm-up: vorher selbst einlaufen. Das GPS misst oft etwas länger als die offiziellen Kilometerschilder – mit der Distanz-Korrektur in den Einstellungen ausgleichbar.</p>`;
+  }else{
+    h=`${name}
+    <div class="head">Aufwärmen</div>
+    <div class="group"><label class="cell"><span class="l">Warm-up (Minuten)</span><input type="number" inputmode="numeric" min="0" value="${ed.warm}" oninput="ed.warm=num(this.value);edSum()"></label></div>
+    ${ed.sets.map((s,i)=>`
+    <div class="head" style="display:flex;justify-content:space-between;align-items:center"><span>Satz ${i+1}</span>${ed.sets.length>1?`<button class="link red" onclick="rmSet(${i})">Entfernen</button>`:''}</div>
+    <div class="group">
+      <label class="cell"><span class="l">Wiederholungen</span><input type="number" inputmode="numeric" min="1" value="${s.reps}" oninput="ed.sets[${i}].reps=Math.max(1,num(this.value));edSum()"></label>
+      <label class="cell"><span class="l">Distanz (m)</span><input type="number" inputmode="numeric" min="50" step="50" value="${s.dist}" oninput="ed.sets[${i}].dist=Math.max(50,num(this.value));edSum()"></label>
+      <div class="cell"><span class="l">Pace (min/km)</span><span class="pace"><input type="number" inputmode="numeric" min="1" value="${Math.floor(s.pace/60)}" oninput="setPace(${i},'m',this.value)">:<input type="number" inputmode="numeric" min="0" max="59" value="${String(s.pace%60).padStart(2,'0')}" oninput="setPace(${i},'s',this.value)"></span></div>
+      <label class="cell"><span class="l">Pause danach (Sek.)</span><input type="number" inputmode="numeric" min="0" value="${s.rest}" oninput="ed.sets[${i}].rest=num(this.value);edSum()"></label>
+    </div>`).join('')}
+    <div style="margin-top:14px"><button class="btn" onclick="addSet()">Weiteren Satz hinzufügen</button></div>
+    <div class="head">Abwärmen</div>
+    <div class="group"><label class="cell"><span class="l">Cool-down (Minuten)</span><input type="number" inputmode="numeric" min="0" value="${ed.cool}" oninput="ed.cool=num(this.value);edSum()"></label></div>`;
+  }
+  $('#edbody').innerHTML=h;
+  if(ed.kind==='race')renderRaceSplits(raceDist(ed),ed.time);
   edSum();
 }
-function edSum(){$('#edsum').textContent=summ(ed)+' (nach dem letzten Intervall entfällt die Pause)'}
 function setPace(i,k,v){const s=ed.sets[i];let m=Math.floor(s.pace/60),sec=s.pace%60;if(k==='m')m=num(v);else sec=Math.min(59,num(v));s.pace=Math.max(60,m*60+sec);edSum()}
 function addSet(){const l=ed.sets[ed.sets.length-1];ed.sets.push({...l});renderEd()}
 function rmSet(i){ed.sets.splice(i,1);renderEd()}
 function savePlan(){
-  if(!ed.name.trim())ed.name='Training';
+  if(ed.kind==='race'){const D=raceDist(ed),pc=ed.time/(D/1000);if(!D||!ed.time||pc<150||pc>600){alert('Bitte Distanz und eine realistische Zielzeit eingeben.');return}}
+  if(ed.kind==='run'&&ed.goal==='dist'&&ed.dist<500){alert('Bitte eine Distanz von mindestens 0,5 km eingeben.');return}
+  if(!ed.name.trim())ed.name=KINDS[ed.kind].t;
+  delete ed.lastPace;
   if(edNew)plans.push(ed);else plans=plans.map(p=>p.id===ed.id?ed:p);
-  savePlans();show('home');
+  kindSel=ed.kind;LS.set('iv_kind',kindSel);savePlans();show('home');
 }
-function delPlan(){if(confirm('Dieses Training löschen?')){plans=plans.filter(p=>p.id!==ed.id);savePlans();show('home')}}
+function delPlan(){if(confirm('Diese Vorlage löschen?')){plans=plans.filter(p=>p.id!==ed.id);savePlans();show('home')}}
 
 /* ---------- Audio ---------- */
 /* iOS gibt die Audio-Session erst an Spotify & Co. zurück, wenn die Seite
@@ -715,13 +816,15 @@ function startRun(id){const plan=plans.find(p=>p.id===id);if(plan)startPlan(plan
 // sess: ID einer Antonia-Einheit (wird nach dem Lauf abgehakt), back: Ansicht nach Abbruch
 function startPlan(plan,sess,back){
   if(!('geolocation' in navigator)){alert('Dieses Gerät bietet kein GPS im Browser.');return}
-  R={plan,sess,back,steps:buildSteps(plan),state:'wait',i:0,stepTime:0,stepDist:0,total:0,totalDist:0,paused:false,locked:false,lastTouch:performance.now(),last:performance.now(),kf:null,lastF:null,skips:0,spd:null,spdT:0,win:[],log:[],started:new Date().toISOString(),acc:null,flags:{},err:null};
-  $('#rtitle').textContent=plan.name;$('#rplan').textContent=summ(plan);$('#runwait').hidden=false;$('#runlive').hidden=true;
+  R={plan,sess,back,kind:sess?'coach':'iv',steps:buildSteps(plan),state:'wait',i:0,stepTime:0,stepDist:0,total:0,totalDist:0,paused:false,locked:false,lastTouch:performance.now(),last:performance.now(),kf:null,lastF:null,skips:0,spd:null,spdT:0,win:[],log:[],started:new Date().toISOString(),acc:null,flags:{},err:null};
+  $('#rtitle').textContent=plan.name;$('#rplan').textContent=plan.sum||summ(plan);$('#runwait').hidden=false;$('#runlive').hidden=true;
   $('#wseg').innerHTML=segHTML(R.steps);$('#rtl').innerHTML=$('#ltl').innerHTML=segHTML(R.steps,true);
-  $('#v-run').classList.remove('paused');paintPauseBtn();$('#rskip').style.visibility=plan.id==='race'?'hidden':'';
+  $('#v-run').classList.remove('paused');paintPauseBtn();setRunKind();
   show('run');paintGps();
   R.watch=navigator.geolocation.watchPosition(onPos,onPosErr,{enableHighAccuracy:true,maximumAge:0,timeout:20000});
 }
+// Farbe des Laufbildschirms nach Art: Lauf grün, Rennen lila, Intervalle orange
+function setRunKind(race){const k=race?'race':R.kind;$('#v-run').dataset.k=$('#lock').dataset.k=k}
 function abortWait(){const b=R&&R.back||'home';stopSensors();R=null;show(b)}
 function stopSensors(){if(!R)return;clearInterval(R.timer);try{navigator.geolocation.clearWatch(R.watch)}catch(e){}releaseWake()}
 
@@ -806,6 +909,9 @@ function enterStep(i){
   if(s.type==='run')tk=[...(s.total>1?(s.n===s.total?['@last']:[TK.nm(s.nm),TK.n(s.n),'von',TK.n(s.total)]):[TK.nm(s.nm)]),...TK.dist(s.dist),...TK.pace(s.pace,true)];
   else tk=['@'+s.type,...TK.dur(s.dur)];
   if(R.race){t=`Rennen über ${raceName(R.race.D)}. Zielzeit ${spTime(R.race.T)}. Ruhig angehen.`;tk=['@rstart|@start']}
+  if(R.free){const f=R.free;
+    t=`Lauf. ${f.goal==='time'?spDur(f.dur):f.goal==='dist'?spDist(f.dist):'Freier Lauf'}${f.pace?'. Tempo '+spPace(f.pace):''}.`;
+    tk=[TK.nm('Dauerlauf'),...(f.goal==='time'?TK.dur(f.dur):f.goal==='dist'?TK.dist(f.dist):[]),...(f.pace?TK.pace(f.pace,true):[])]}
   cue(s.type,t,true,tk);paint();
 }
 function logStep(){
@@ -833,10 +939,12 @@ function tick(){
   R.stepTime+=dt;R.total+=dt;
   const s=R.steps[R.i];
   if(s.type==='run'){
+    if(R.free&&R.free.dur&&R.stepTime>=R.free.dur){next();return}
     const rem=s.dist-R.stepDist;
     if(rem<=0){next();return}
     if(rem<=100&&s.dist>=300&&!R.flags.h100){R.flags.h100=1;cue('h100','Noch 100 Meter',false,['@h100'])}
     if(R.race)raceTick(s,rem);
+    else if(R.free)freeTick();
     else if(settings.hints&&(settings.voice||settings.musicMode)){
       // Lockere Läufe (tol): Hinweis nur jeden Kilometer und mit größerer Toleranz
       const he=s.tol?1000:250,th=s.tol?s.tol+5:10;
@@ -863,7 +971,10 @@ function paint(){
   $('#v-run').dataset.t=s.type;$('#lock').dataset.t=s.type;
   const p=curPace();
   let remTxt,unit,frac;
-  if(s.type==='run'){remTxt=String(Math.ceil(Math.max(0,s.dist-R.stepDist)));unit='Meter';frac=R.stepDist/s.dist}
+  const F=R.free;
+  if(F&&F.goal==='time'){remTxt=fmtTime(Math.ceil(Math.max(0,F.dur-R.stepTime)));unit='verbleibend';frac=R.stepTime/F.dur}
+  else if(F&&F.goal==='free'){remTxt=km2(R.stepDist);unit='Kilometer';frac=(R.stepDist%1000)/1000}
+  else if(s.type==='run'){remTxt=String(Math.ceil(Math.max(0,s.dist-R.stepDist)));unit='Meter';frac=R.stepDist/s.dist}
   else{remTxt=fmtTime(Math.ceil(Math.max(0,s.dur-R.stepTime)));unit='verbleibend';frac=R.stepTime/s.dur}
   frac=Math.min(1,Math.max(0,frac));
   const sub=s.type==='run'?fmtDist(s.dist)+' @ '+fmtPace(s.pace)+' /km':s.type==='rest'?'Locker traben oder gehen':s.type==='warm'?'Locker einlaufen':'Locker auslaufen';
@@ -874,7 +985,8 @@ function paint(){
     rsub=`Ziel ${fmtTime(rc.T)} · km ${rc.segs.indexOf(sg)+1} @ ${fmtPace(sg.pace)} /km`;
     dtxt=a<=2?'Im Plan':`${a} s ${rdiff>0?'vor':'hinter'} Plan`;
     dcol=rdiff>0?(a>(R.stepDist<2000?5:15)?'var(--orange)':'var(--green)'):(a<=5?'var(--green)':a<=15?'var(--orange)':'var(--red)')}
-  else if(s.type==='run'&&p){const d=Math.round(p-s.pace),a=Math.abs(d);
+  if(F)rsub=`${F.goal==='time'?fmtTime(F.dur)+' Lauf':F.goal==='dist'?fmtDist(F.dist)+' Lauf':'Freier Lauf'}${F.pace?' @ '+fmtPace(F.pace)+' /km':' · Wohlfühltempo'}`;
+  if(!rc&&s.type==='run'&&p&&tgt){const d=Math.round(p-s.pace),a=Math.abs(d);
     const g=s.tol||5;
     if(a<=g){dtxt='Im Ziel';dcol='var(--green)'}
     else if(d>0){dtxt=`${a} s/km zu langsam`;dcol=a>g+10?'var(--red)':'var(--orange)'}
@@ -887,21 +999,23 @@ function paint(){
     $('#rring').style.strokeDashoffset=RING*(1-frac);
     $('#rbadge').hidden=!R.paused;
     const rp=$('#rpace');rp.textContent=fmtPace(p);rp.style.color=dcol;
-    $('#rtarget').textContent=s.type==='run'?fmtPace(tgt):'–';
+    $('#rtarget').textContent=s.type==='run'&&tgt?fmtPace(tgt):'–';
     const dl=$('#rdelta');dl.textContent=dtxt;dl.style.color=dcol;
     $('#rtime').textContent=fmtTime(R.total);
     $('#rdist').textContent=km2(R.totalDist);
     const single=s.type==='run'&&s.total===1;
     if(rc){$('#rcount').textContent=fmtTime(rc.T-rdiff);$('#rcountl').textContent='Prognose'}
     else{$('#rcount').textContent=single?fmtPace(R.stepDist>30?R.stepTime/R.stepDist*1000:0):cnt;$('#rcountl').textContent=single?'Ø Pace':'Intervall'}
-    $('#rnextdot').className=rc?'k-run':nx?'k-'+nx.type:'';
+    $('#rskip').hidden=!!(rc||F)||!nx;
+    $('#rnextdot').className=rc||F?'k-run':nx?'k-'+nx.type:'';
     if(rc){const sg=raceSeg(R.stepDist),i=rc.segs.indexOf(sg);$('#rnext').textContent=`Bei ${i+1===rc.segs.length?'Ziel':'km '+(i+1)}: Soll ${fmtTime(sg.cum)}`}
+    else if(F)$('#rnext').textContent=F.goal==='time'?`Ende nach ${fmtTime(F.dur)}`:F.goal==='dist'?`Ziel bei ${fmtDist(F.dist)}`:'Beenden, wann du willst';
     else $('#rnext').textContent=nx?(nx.type==='run'?`${nx.label} · ${fmtDist(nx.dist)} @ ${fmtPace(nx.pace)}`:nx.type==='rest'?`Pause · ${fmtTime(nx.dur)}`:`${nx.label} · ${fmtTime(nx.dur)}`):'Ziel – letzter Abschnitt';
   }else{
     $('#lstep').textContent=s.label;$('#lcount').textContent=s.type==='run'?cnt:'';
     $('#lrem').textContent=remTxt;$('#lunit').textContent=unit;
     const lp=$('#lpace');lp.textContent=s.type==='run'?fmtPace(p):'';lp.style.color=dcol;
-    $('#ltarget').textContent=s.type==='run'?'Ziel '+fmtPace(tgt):'';
+    $('#ltarget').textContent=s.type==='run'&&tgt?'Ziel '+fmtPace(tgt):'';
     if(rc)$('#lcount').textContent='Prognose '+fmtTime(rc.T-rdiff);
     const d=$('#ldelta');d.textContent=dtxt;d.style.color=dcol;
     $('#ltime').textContent=fmtTime(R.total);$('#ldist').textContent=km2(R.totalDist);
@@ -914,18 +1028,19 @@ function finish(early){
   const rc=R.race;
   if(rc&&!early){const good=R.total<=rc.T+0.5;
     raceTalk(`Ziel! Endzeit ${spTime(R.total)}. ${good?'Zielzeit geknackt!':'Knapp vorbei.'}`,['#beep','@rfin','rtime',...TK.time(R.total),good?'@rgood':'@rmiss'],'end');
-    // Verlauf: Kilometer-Splits statt eines einzigen Abschnitts
-    const last=R.stepTime-rc.lastKmT,from=rc.splits.length*1000;
-    R.log=[...rc.splits.map(x=>({type:'run',label:`Km ${x.k}`,target:x.pace,tdist:1000,dist:1000,time:x.time})),
-      ...(rc.D-from>1?[{type:'run',label:rc.D-from<999?`Km ${fmtDist(rc.D).replace(' km','')}`:`Km ${rc.splits.length+1}`,target:rc.segs[rc.segs.length-1].pace,tdist:rc.D-from,dist:rc.D-from,time:last}]:[])];
   }
   else if(settings.musicMode)playPattern('end');
   else if(berlinOn())say(['#beep','@fin',...TK.km(R.totalDist),'@end']);
   else{speak(`Training beendet. ${(R.totalDist/1000).toFixed(2).replace('.',' Komma ')} Kilometer.`);beep(1320,0.5)}
+  // Lauf und Rennen: Verlauf mit Kilometer-Splits statt eines einzigen Abschnitts
+  const S=rc||R.free;
+  if(S){const from=S.splits.length*1000,remD=R.stepDist-from,last=R.stepTime-S.lastKmT;
+    R.log=[...S.splits.map(x=>({type:'run',label:`Km ${x.k}`,target:x.pace||null,tdist:1000,dist:1000,time:x.time})),
+      ...(remD>30?[{type:'run',label:`Km ${S.splits.length+1}${remD<990?` (${Math.round(remD)} m)`:''}`,target:rc?rc.segs[Math.min(rc.segs.length-1,S.splits.length)].pace:(S.pace||null),tdist:remD,dist:remD,time:last}]:[])]}
   let id=null;
   if(R.total>=10){
     id='r'+Date.now();
-    history.push({id,date:R.started,name:R.plan.name,time:R.total,dist:R.totalDist,pace:R.totalDist>30?R.total/R.totalDist*1000:0,log:R.log});
+    history.push({id,kind:R.kind,date:R.started,name:R.plan.name,time:R.total,dist:R.totalDist,pace:R.totalDist>30?R.total/R.totalDist*1000:0,log:R.log});
     saveHist();
     if(R.sess&&!early)coachDone(R.sess,id);
   }
@@ -1098,7 +1213,7 @@ function renderPlan(){
       <button class="play c" onclick="startSess('${nx.id}')" aria-label="Starten"><svg viewBox="0 0 24 24"><path d="M6 4.5v15l13-7.5z"/></svg></button></div>
       <div class="seg">${segHTML(buildSteps(sessPlan(nx)))}</div>
       <div class="why2">${sessShort(nx)}</div>
-      <div class="pact"><button onclick="openSess('${nx.id}')">Details</button><button onclick="startSess('${nx.id}')">Starten</button></div></div>`;
+      <div class="pact"><button onclick="openSess('${nx.id}')">Details</button></div></div>`;
   }else h+=`<div class="group why" style="text-align:center;margin-top:12px"><div style="font-size:40px">🏁</div><b>Plan geschafft!</b><div style="color:var(--mut);margin-top:4px">Alle Einheiten erledigt. Stark, Antonia!</div></div>`;
   for(let w=0;w<N;w++){
     const ws=ss.filter(s=>s.w===w),a=new Date(start);a.setDate(a.getDate()+w*7);const b=new Date(a);b.setDate(b.getDate()+6);
@@ -1144,14 +1259,33 @@ function renderSess(){
   ${run?`<div class="btnrow"><button class="btn" onclick="showRun('${run.id}')">Lauf ansehen · ${km2(run.dist)} km in ${fmtTime(run.time)}</button></div>`:''}`;
 }
 
+/* ---------- Lauf (Dauer, Distanz oder frei) ----------
+   Ein durchgehender Abschnitt. Jeden km: Tempo des letzten Kilometers;
+   mit Zieltempo zusätzlich "schneller/langsamer" ab 15 s/km Abweichung.
+   Halbzeit-Ansage bei Dauer- oder Distanzziel. */
+function startFree(p,back='home'){
+  const goal=p.goal||'free',dur=goal==='time'?Math.max(1,p.dur||0)*60:0,dist=goal==='dist'?Math.max(500,p.dist||0):0;
+  startPlan({id:p.id,name:p.name,warm:0,cool:0,nm:'Lauf',sets:[{reps:1,dist:dist||1e9,pace:p.pace||0,rest:0,tol:15}],sum:runDesc(p)},null,back);
+  if(R){R.kind='run';R.free={goal,dur,dist,pace:p.pace||0,lastK:0,lastKmT:0,splits:[],half:0};setRunKind()}
+}
+function freeTick(){
+  const f=R.free,d=R.stepDist,el=R.stepTime,k=Math.floor(d/1000);
+  if(k>=1&&k!==f.lastK&&(!f.dist||f.dist-d>150)){f.lastK=k;const split=el-f.lastKmT;f.lastKmT=el;f.splits.push({k,time:split,pace:f.pace});
+    if(settings.voice||settings.musicMode){
+      const dd=f.pace?split-f.pace:0,j=f.pace&&settings.hints?(dd>15?'faster':dd<-15?'slower':'ok'):null;
+      if(settings.musicMode)playPattern(j==='faster'?'faster':j==='slower'?'slower':'t10');
+      else talk(`Kilometer ${k}. Pace ${spPace(split).replace(' pro Kilometer','')}.${j==='faster'?' Etwas schneller.':j==='slower'?' Etwas langsamer.':j==='ok'?' Passt.':''}`,
+        ['km',TK.n(k),...TK.pace(split),...(j?['@'+j]:[])]);
+    }}
+  if(!f.half&&((f.dur>=600&&el>=f.dur/2)||(f.dist>=2000&&d>=f.dist/2))){f.half=1;raceTalk('Halbzeit.',['@rhalf'],'t10')}
+}
+
 /* ---------- Rennmodus ----------
    Auf Zielzeit mit Negativ-Split: 1. km +5 s/km, letzte 2 km je −3 s/km,
    dazwischen gleichmäßig – in Summe genau die Zielzeit. Ansagen jeden km
    (Zwischenzeit + Abstand zum Plan), auf den ersten 2 km zusätzlich alle
    500 m eine Warnung bei zu schnellem Start. */
 const RACE_D={'5k':5000,'10k':10000,'hm':21097.5},RACE_T={'5k':1500,'10k':3000,'hm':6600};
-let rcf=Object.assign({dist:'10k',km:10,time:3000,ant:!!coach},LS.get('iv_race',{}));
-const saveRcf=()=>LS.set('iv_race',rcf);
 const raceDist=c=>c.dist==='free'?Math.max(1000,Math.round((c.km||0)*1000)):RACE_D[c.dist];
 const raceName=D=>D===5000?'5 km':D===10000?'10 km':Math.abs(D-21097.5)<1?'Halbmarathon':fmtDist(D);
 function raceSplits(D,T){
@@ -1167,8 +1301,9 @@ function racePlanAt(d){let t=0;for(const s of R.race.segs){if(d<=s.from)break;t+
 function startRace(c,sess=null,back='home'){
   const D=c.D||raceDist(c),T=c.time;
   if(!T||T/(D/1000)<150||T/(D/1000)>600){alert('Bitte eine realistische Zielzeit eingeben.');return}
-  startPlan({id:'race',name:`Rennen ${raceName(D)}`,warm:0,cool:0,nm:'Rennen',sets:[{reps:1,dist:D,pace:T/(D/1000),rest:0}]},sess,back);
-  if(R)R.race={D,T,segs:raceSplits(D,T),ant:!!c.ant,lastH:0,lastKmT:0,half:0,last:0,splits:[]};
+  startPlan({id:c.id||'race',name:c.name||`Rennen ${raceName(D)}`,warm:0,cool:0,nm:'Rennen',sets:[{reps:1,dist:D,pace:T/(D/1000),rest:0}],
+    sum:`${raceName(D)} · Zielzeit ${fmtTime(T)} · Ø ${fmtPace(T/(D/1000))} /km · Negativ-Split`},sess,back);
+  if(R){R.kind=sess?'coach':'race';setRunKind(true);R.race={D,T,segs:raceSplits(D,T),ant:!!c.ant,lastH:0,lastKmT:0,half:0,last:0,splits:[]}}
 }
 // Ansage im Rennen: Berliner Stimme (wenn Teil 5 aufgenommen ist), sonst Töne; ohne Berliner Stimme iPhone-Stimme
 function raceTalk(text,tokens,pat){
@@ -1199,42 +1334,27 @@ function raceTick(s,rem){
   if(!rc.half&&rc.D>=3000&&d>=rc.D/2){rc.half=1;raceTalk(`Halbzeit. Hochgerechnet ${spTime(rc.T-diff)}.`,['@rhalf','rprog',...TK.time(rc.T-diff)],null)}
   if(!rc.last&&rc.D>=3000&&rem<=1000){rc.last=1;raceTalk('Letzter Kilometer!',['@rlast'],'h100')}
 }
-// Einstellungen
-function openRace(){renderRace();show('race')}
-function rcfSet(k,v){rcf[k]=v;if(k==='dist'&&RACE_T[v])rcf.time=RACE_T[v];saveRcf();renderRace()}
-function segR(key,opts){return `<div class="segc">${opts.map(([v,l])=>`<button class="${rcf[key]===v?'on':''}" onclick="rcfSet('${key}',${JSON.stringify(v).replace(/"/g,"'")})">${l}</button>`).join('')}</div>`}
-function setRT(part,v){const t=rcf.time||0;let h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=t%60;v=num(v);
-  if(part==='h')h=v;else if(part==='m')m=Math.min(59,v);else s=Math.min(59,v);rcf.time=h*3600+m*60+s;saveRcf();renderRaceSplits()}
-function renderRaceSplits(){
-  const el=$('#rsplits');if(!el)return;const D=raceDist(rcf);
-  if(!rcf.time||!D){el.innerHTML='<div class="cell"><span class="l" style="color:var(--mut)">Bitte Zielzeit eingeben</span></div>';return}
-  const segs=raceSplits(D,rcf.time);
+// Renneinteilung als Tabelle (Editor)
+function renderRaceSplits(D,T){
+  const el=$('#rsplits');if(!el)return;
+  if(!T||!D){el.innerHTML='<div class="cell"><span class="l" style="color:var(--mut)">Bitte Distanz und Zielzeit eingeben</span></div>';return}
+  const segs=raceSplits(D,T);
   el.innerHTML=`<table><tr><th>Km</th><th>Tempo</th><th>Zeit</th></tr>${segs.map((s,i)=>`<tr><td>${s.to-s.from<999?fmtDist(s.to).replace(' km',''):i+1}${s.o>0?' <span class="tag k-easy" style="font-size:10px">ruhig</span>':s.o<0?' <span class="tag k-int" style="font-size:10px">zulegen</span>':''}</td><td>${fmtPace(s.pace)}</td><td>${fmtTime(s.cum)}</td></tr>`).join('')}</table>`;
-}
-function renderRace(){
-  const t=rcf.time||0,h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=t%60,z=x=>String(x).padStart(2,'0');
-  $('#racebody').innerHTML=`
-  <div class="large" style="margin-top:0">Rennmodus</div>
-  <p class="rsub">Auf Zielzeit mit Negativ-Split: Der erste Kilometer ist etwas ruhiger, die letzten zwei etwas schneller. Jeden Kilometer hörst du, wie du im Plan liegst – und am Anfang wirst du gebremst, wenn du zu schnell losläufst.</p>
-  <div class="head">Rennen</div>
-  <div class="group">
-    <div class="cell"><span class="l">Strecke</span>${segR('dist',[['5k','5 km'],['10k','10 km'],['hm','Halbm.'],['free','Frei']])}</div>
-    ${rcf.dist==='free'?`<label class="cell"><span class="l">Distanz (km)</span><input type="number" inputmode="decimal" step="0.1" min="1" value="${rcf.km}" oninput="rcf.km=parseFloat(String(this.value).replace(',','.'))||0;saveRcf();renderRaceSplits()"></label>`:''}
-    <div class="cell"><span class="l">Zielzeit</span><span class="pace"><input type="number" inputmode="numeric" min="0" placeholder="0" value="${h||''}" oninput="setRT('h',this.value)">:<input type="number" inputmode="numeric" min="0" max="59" placeholder="mm" value="${t?z(m):''}" oninput="setRT('m',this.value)">:<input type="number" inputmode="numeric" min="0" max="59" placeholder="ss" value="${t?z(s):''}" oninput="setRT('s',this.value)"></span></div>
-    <div class="cell"><span class="l">Ansprache</span>${segR('ant',[[false,'Neutral'],[true,'Antonia']]).replace('class="segc"','class="segc" style="max-width:190px"')}</div>
-  </div>
-  <div class="head">Renneinteilung</div>
-  <div class="group" id="rsplits"></div>
-  <p class="foot">Die Distanz misst das GPS. Es weicht von den offiziellen Kilometerschildern meist etwas ab (oft misst es zu lang) – das lässt sich in den Einstellungen mit der Distanz-Korrektur ausgleichen. Vor dem Start selbst einlaufen, der Rennmodus hat kein Warm-up.</p>
-  <div style="margin-top:22px"><button class="btn fill" style="background:var(--purple);font-size:19px;padding:17px" onclick="startRace(rcf,null,'race')">Zum Start</button></div>`;
-  renderRaceSplits();
 }
 
 /* ---------- Verlauf ---------- */
+const HK={run:{t:'Lauf',ic:'route'},iv:{t:'Intervalle',ic:'rep'},race:{t:'Rennen',ic:'flag'},coach:{t:'Antonia',ic:'cal'}};
+// Art eines Eintrags; ältere Einträge ohne "kind" werden am Namen erkannt
+const kindOf=r=>r.kind||(/^Rennen/.test(r.name)?'race':/ · Woche \d+$/.test(r.name)?'coach':'iv');
+let histF=LS.get('iv_histf','all');
+function setHistF(k){histF=k;LS.set('iv_histf',k);renderHist()}
 function renderHist(){
-  const h=history.slice().reverse();
-  $('#histlist').innerHTML=h.length?`<div class="group">${h.map(r=>`<div class="cell runrow" onclick="showRun('${r.id}')" style="display:block"><div class="t"><b>${esc(r.name)}</b><span class="s" style="margin:0">${fmtDate(r.date)}</span></div>
-  <div class="s">${km2(r.dist)} km · ${fmtTime(r.time)} · Ø ${fmtPace(r.pace)}/km</div></div>`).join('')}</div>`:'<p class="foot">Noch keine Läufe gespeichert.</p>';
+  const present=Object.keys(HK).filter(k=>history.some(r=>kindOf(r)===k));
+  if(histF!=='all'&&!present.includes(histF))histF='all';
+  const h=history.slice().reverse().filter(r=>histF==='all'||kindOf(r)===histF);
+  $('#histlist').innerHTML=(present.length>1?`<div class="hfilter"><button class="${histF==='all'?'on':''}" onclick="setHistF('all')">Alle</button>${present.map(k=>`<button class="hk-${k} ${histF===k?'on':''}" onclick="setHistF('${k}')">${HK[k].t}</button>`).join('')}</div>`:'')+
+   (h.length?`<div class="group">${h.map(r=>{const k=kindOf(r);return `<div class="cell runrow hrow" onclick="showRun('${r.id}')"><span class="hic hk-${k}">${IC[HK[k].ic]}</span><div class="hx"><div class="t"><b>${esc(r.name)}</b><span class="s" style="margin:0">${fmtDate(r.date)}</span></div>
+  <div class="s">${HK[k].t} · ${km2(r.dist)} km · ${fmtTime(r.time)} · Ø ${fmtPace(r.pace)}/km</div></div></div>`}).join('')}</div>`:'<p class="foot">Noch keine Läufe gespeichert.</p>');
 }
 let curRun=null;
 function showRun(id){
@@ -1243,17 +1363,18 @@ function showRun(id){
     const pace=l.dist>30?l.time/l.dist*1000:0;
     let col='';if(l.target&&pace){const d=pace-l.target;col=Math.abs(d)<=5?'var(--green)':Math.abs(d)<=15?'var(--orange)':'var(--red)'}
     return `<tr><td>${esc(l.label)}</td><td>${Math.round(l.dist)} m</td><td>${fmtTime(l.time)}</td><td style="color:${col}">${fmtPace(pace)}${l.target?` <span style="color:var(--mut)">/ ${fmtPace(l.target)}</span>`:''}</td></tr>`}).join('');
-  $('#detail').innerHTML=`<div class="large" style="margin-top:4px">${esc(r.name)}</div><p class="foot" style="margin:-8px 4px 14px">${fmtDate(r.date)}</p>
+  const k=kindOf(r);
+  $('#detail').innerHTML=`<div class="hk-${k}" style="margin:4px 4px 0"><span class="tag">${HK[k].t}</span></div><div class="large" style="margin-top:6px">${esc(r.name)}</div><p class="foot" style="margin:-8px 4px 14px">${fmtDate(r.date)}</p>
   <div class="group stats"><div><b>${km2(r.dist)}</b><small>km</small></div><div><b>${fmtTime(r.time)}</b><small>Zeit</small></div><div><b>${fmtPace(r.pace)}</b><small>Ø min/km</small></div></div>
-  <div class="head">Abschnitte</div>
+  <div class="head">${k==='run'||k==='race'||r.log.some(l=>/^Km /.test(l.label))?'Kilometer':'Abschnitte'}</div>
   <div class="group"><table><tr><th>Abschnitt</th><th>Dist.</th><th>Zeit</th><th>Pace</th></tr>${rows}</table></div>`;
   show('detail');
 }
 function delRun(){if(confirm('Diesen Lauf löschen?')){history=history.filter(x=>x.id!==curRun);saveHist();show('hist')}}
 async function exportHist(){
   const txt=JSON.stringify(history,null,2);
-  try{if(navigator.share){await navigator.share({title:'Intervall-Verlauf',text:txt});return}}catch(e){if(e&&e.name==='AbortError')return}
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'application/json'}));a.download='intervall-verlauf.json';a.click();
+  try{if(navigator.share){await navigator.share({title:'Leon Läuft – Verlauf',text:txt});return}}catch(e){if(e&&e.name==='AbortError')return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'application/json'}));a.download='leon-laeuft-verlauf.json';a.click();
 }
 
 /* ---------- Init ---------- */

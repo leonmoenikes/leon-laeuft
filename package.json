@@ -1,0 +1,11 @@
+{
+  "name": "leon-laeuft",
+  "private": true,
+  "description": "Lauf-App mit Intervallen, Rennmodus, Antonia-Modus und Berliner Sprachansagen",
+  "scripts": {
+    "test": "node tests/run.js"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

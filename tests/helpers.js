@@ -57,7 +57,8 @@ async function recordSay(pg) {
   await pg.evaluate(async () => {
     audioOn(); await loadVoice();
     window.__said = []; window.__tts = 0;
-    window.say = (t, low, ant) => { __said.push(t.map(x => clipKey(x, ant) || x).join(' ')); return Promise.resolve(); };
+    // gleiche Voreinstellung wie say(): Ansprache mit Namen laut Einstellung
+    window.say = (t, low, ant = !!settings.antName) => { __said.push(t.map(x => clipKey(x, ant) || x).join(' ')); return Promise.resolve(); };
     const sp = speechSynthesis.speak.bind(speechSynthesis);
     speechSynthesis.speak = u => { if (u.text.trim()) __tts++; };
   });

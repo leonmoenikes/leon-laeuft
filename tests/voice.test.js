@@ -1,5 +1,5 @@
 // Berliner Stimme: lädt, spielt über Web Audio (liegt über der Musik), nie iOS-Sprachausgabe
-const { ok, eq, newPage, close, noErrors, startFirst } = require('./helpers');
+const { ok, eq, newPage, close, noErrors, startFirst, recordSay, said } = require('./helpers');
 
 exports['Stimme lädt alle Bausteine und spielt über Web Audio'] = async b => {
   const pg = await newPage(b, { init: () => {
@@ -26,4 +26,27 @@ exports['Bausteine für Zahlen, Distanzen, Zeiten und Tempo'] = async b => {
   const missing = await pg.evaluate(() => { audioOn(); return loadVoice().then(() => ['n0', 'n59', 'h9', 't9', 'rahead', 'rbehind', 'stunde', 'sekunde', 'nm_dauer'].filter(k => !VB.buf[k])); });
   eq(missing, [], 'fehlende Bausteine');
   await close(pg);
+};
+
+exports['Schalter „Antonia mit Namen ansprechen“ steuert die Ansprache überall'] = async b => {
+  // ohne Antonia-Plan: Voreinstellung aus
+  const pg = await newPage(b);
+  eq(await pg.evaluate(() => [settings.antName, document.querySelector('#s-antname').checked]), [false, false], 'Voreinstellung ohne Plan');
+  await recordSay(pg);
+  await startFirst(pg, 'run');
+  await pg.evaluate(() => finish(false));
+  ok((await said(pg)).every(x => !/\ba(start|end|ok|faster|slower|h100)_/.test(x)), 'ohne Namen');
+  // Schalter an → im normalen Lauf mit Namen
+  await pg.evaluate(() => show('set'));
+  await pg.check('#s-antname');
+  eq(await pg.evaluate(() => JSON.parse(localStorage.getItem('iv_settings')).antName), true, 'gespeichert');
+  await startFirst(pg, 'run');
+  await pg.evaluate(() => finish(false));
+  const s = (await said(pg)).join(' | ');
+  ok(/astart_\d/.test(s) && /aend_\d/.test(s), 'Start und Ende mit Namen: ' + s);
+  noErrors(pg); await close(pg);
+  // mit Antonia-Plan auf dem Gerät: Voreinstellung an
+  const pg2 = await newPage(b, { init: () => localStorage.setItem('iv_coach', JSON.stringify({ cfg: {}, sessions: [] })) });
+  eq(await pg2.evaluate(() => settings.antName), true, 'Voreinstellung mit Plan');
+  await close(pg2);
 };

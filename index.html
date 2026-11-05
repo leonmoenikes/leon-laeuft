@@ -417,10 +417,11 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
     <label class="cell"><span class="l">Signalton</span><input class="sw" type="checkbox" id="s-beep" onchange="settings.beep=this.checked;saveSettings()"></label>
     <label class="cell"><span class="l">Sprachansagen</span><input class="sw" type="checkbox" id="s-voice" onchange="settings.voice=this.checked;saveSettings()"></label>
     <label class="cell"><span class="l">Berliner Stimme</span><input class="sw" type="checkbox" id="s-berlin" onchange="settings.berlin=this.checked;saveSettings()"></label>
+    <label class="cell"><span class="l">Antonia mit Namen ansprechen</span><input class="sw" type="checkbox" id="s-antname" onchange="settings.antName=this.checked;saveSettings()"></label>
     <label class="cell"><span class="l">Pace-Hinweise</span><input class="sw" type="checkbox" id="s-hints" onchange="settings.hints=this.checked;saveSettings()"></label>
   </div>
   <p class="foot">Der Musik-Modus ersetzt die Sprache durch Tonmuster, damit Spotify ungestört weiterläuft: Intervall = 1 langer hoher Ton · Pause = 2 tiefe Töne · Warm-/Cool-down = 1 mittlerer Ton · 100 m vor Ziel = 2 kurze hohe Töne · schneller laufen = 2 aufsteigende Töne · langsamer laufen = 2 absteigende Töne · Ende = 3 aufsteigende Töne. Der Klingel-Schalter muss auf laut stehen.</p>
-  <p class="foot">Berliner Stimme: Die Ansagen mit Berliner Schnauze liegen über deiner Musik, ohne sie anzuhalten (Musik-Modus dafür ausschalten). Ohne Berliner Stimme spricht die iPhone-Stimme – die pausiert Spotify leider. Das Sprechtempo gilt nur für die iPhone-Stimme.</p>
+  <p class="foot">Berliner Stimme: Die Ansagen mit Berliner Schnauze liegen über deiner Musik, ohne sie anzuhalten (Musik-Modus dafür ausschalten). Mit „Antonia mit Namen ansprechen“ heißt es z. B. „Jut jemacht, Antonia!“ – in allen Trainings. Ohne Berliner Stimme spricht die iPhone-Stimme – die pausiert Spotify leider. Das Sprechtempo gilt nur für die iPhone-Stimme.</p>
   <div class="head">Tastensperre</div>
   <div class="group">
     <label class="cell"><span class="l">Gesperrt starten</span><input class="sw" type="checkbox" id="s-startlock" onchange="settings.startLocked=this.checked;saveSettings()"></label>
@@ -465,7 +466,7 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
 </div>
 
 <script>
-const APP_VER='2026-11-05.1'; // bei Änderungen hochzählen – wird in den Einstellungen angezeigt
+const APP_VER='2026-11-05.2'; // bei Änderungen hochzählen – wird in den Einstellungen angezeigt
 /* ---------- Helfer ---------- */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -508,6 +509,8 @@ if(!LS.get('iv_mig3',false)){
 let runs=LS.get('iv_hist',[]); // alle gespeicherten Läufe (früher "history", kollidierte mit window.history)
 let settings=Object.assign({beep:true,voice:true,hints:true,volume:0.8,rate:1,corr:0,startLocked:true,autoLock:true,musicMode:false,kalman:true,doppler:true,berlin:true,vboost:1.6},LS.get('iv_settings',{}));
 // Einmalige Umstellung (v2): Musik-Modus aus, damit die Berliner Stimme spricht – sie liegt jetzt sauber über der Musik
+// Antonia mit Namen ansprechen: Voreinstellung an, wenn auf diesem Gerät ein Antonia-Plan existiert
+if(typeof settings.antName!=='boolean')settings.antName=!!LS.get('iv_coach',null);
 if((settings.ver||1)<2){settings.musicMode=false;settings.ver=2;try{if(localStorage.getItem('iv_settings'))LS.set('iv_settings',settings)}catch(e){}}
 const savePlans=()=>LS.set('iv_plans',plans);
 const saveHist=()=>LS.set('iv_hist',runs);
@@ -591,7 +594,7 @@ function cardHTML(p){
     const D=raceDist(p),segs=raceSplits(D,p.time),mid=segs[Math.floor(segs.length/2)];
     meta=[`${IC.flag}${raceName(D)}`,`${IC.clock}Ziel ${fmtTime(p.time)}`,`${IC.speed}Ø ${fmtPace(p.time/(D/1000))}`];
     body=`<div class="seg">${segs.map(s=>`<i class="k-${s.o>0?'easy':s.o<0?'int':'race'}" style="flex:${Math.round(s.to-s.from)}"></i>`).join('')}</div>
-      <div class="why2">Negativ-Split ${fmtPace(segs[0].pace)} → ${fmtPace(mid.pace)} → ${fmtPace(segs[segs.length-1].pace)} /km${p.ant?' · Ansprache Antonia':''}</div>`;
+      <div class="why2">Negativ-Split ${fmtPace(segs[0].pace)} → ${fmtPace(mid.pace)} → ${fmtPace(segs[segs.length-1].pace)} /km</div>`;
   }
   return `<div class="group plan pk-${p.kind}"><div class="ptop"><div class="pinfo"><h3>${esc(p.name)}</h3>
       <div class="meta">${meta.map(m=>`<span>${m}</span>`).join('')}</div></div>
@@ -651,7 +654,6 @@ function renderEd(){
       <div class="cell"><span class="l">Strecke</span>${segE('dist',[['5k','5 km'],['10k','10 km'],['hm','Halbm.'],['free','Frei']])}</div>
       ${ed.dist==='free'?`<label class="cell"><span class="l">Distanz (km)</span><input type="number" inputmode="decimal" step="0.1" min="1" value="${ed.km}" oninput="ed.km=parseFloat(String(this.value).replace(',','.'))||0;renderRaceSplits(raceDist(ed),ed.time)"></label>`:''}
       <div class="cell"><span class="l">Zielzeit</span>${hmsIn(ed.time||0,'edTime')}</div>
-      <div class="cell"><span class="l">Ansprache</span>${segE('ant',[[false,'Neutral'],[true,'Antonia']],'max-width:190px')}</div>
     </div>
     <div class="head">Renneinteilung (Negativ-Split)</div>
     <div class="group" id="rsplits"></div>
@@ -739,7 +741,7 @@ function clipKey(k,antonia){
   return pool[Math.floor(Math.random()*pool.length)];
 }
 // Spielt Bausteine nacheinander; reiht sich hinter laufende Ansagen ein. low: entfällt, wenn gerade gesprochen wird.
-async function say(tokens,low=false,antonia=!!(R&&(R.sess||(R.race&&R.race.ant)))){
+async function say(tokens,low=false,antonia=!!settings.antName){
   if(VB.p)await VB.p;
   if(!VB.ready||!audioOn())return;
   const now=ac.currentTime;
@@ -1404,7 +1406,7 @@ function startRace(c,sess=null,back='home'){
 }
 // Ansage im Rennen: Berliner Stimme (wenn Teil 5 aufgenommen ist), sonst Töne; ohne Berliner Stimme iPhone-Stimme
 function raceTalk(text,tokens,pat){
-  const ant=!!(R&&(R.sess||(R.race&&R.race.ant)));
+  const ant=!!settings.antName;
   if(settings.musicMode){if(pat)playPattern(pat);return}
   if(berlinOn()){(VB.p||Promise.resolve()).then(()=>{if(VB.buf.rahead)say(tokens,false,ant);else if(pat)playPattern(pat)});return}
   speak(text);
@@ -1721,7 +1723,7 @@ async function restoreAll(file){
 
 // Einstellungs-Schalter aus settings übernehmen (Start und nach Wiederherstellung)
 function paintSettings(){
-  $('#s-beep').checked=settings.beep;$('#s-music').checked=settings.musicMode;$('#s-kalman').checked=settings.kalman;$('#s-doppler').checked=settings.doppler;$('#s-voice').checked=settings.voice;$('#s-berlin').checked=settings.berlin;$('#s-hints').checked=settings.hints;
+  $('#s-beep').checked=settings.beep;$('#s-music').checked=settings.musicMode;$('#s-kalman').checked=settings.kalman;$('#s-doppler').checked=settings.doppler;$('#s-voice').checked=settings.voice;$('#s-antname').checked=settings.antName;$('#s-berlin').checked=settings.berlin;$('#s-hints').checked=settings.hints;
   $('#s-startlock').checked=settings.startLocked;$('#s-autolock').checked=settings.autoLock;
   $('#s-vol').value=settings.volume;$('#s-vboost').value=settings.vboost;$('#s-rate').value=settings.rate;$('#s-corr').value=settings.corr;
 }

@@ -465,7 +465,7 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
 </div>
 
 <script>
-const APP_VER='2026-11-04.6'; // bei Änderungen hochzählen – wird in den Einstellungen angezeigt
+const APP_VER='2026-11-05.1'; // bei Änderungen hochzählen – wird in den Einstellungen angezeigt
 /* ---------- Helfer ---------- */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -483,15 +483,26 @@ function fmtDate(iso){return new Date(iso).toLocaleString('de-DE',{day:'2-digit'
    iv   = Intervalle: warm, cool, sets [{reps, dist, pace, rest}]
    race = Rennen: dist ('5k'|'10k'|'hm'|'free'), km (bei frei), time (Zielzeit s), ant (Ansprache Antonia) */
 const KINDS={run:{t:'Lauf',nw:'Neuer Lauf'},iv:{t:'Intervalle',nw:'Neues Intervalltraining'},race:{t:'Rennen',nw:'Neues Rennen'}};
-function defaultPlan(){return {id:'p'+Date.now(),kind:'iv',name:'5 × 1000 m',warm:10,cool:5,sets:[{reps:5,dist:1000,pace:240,rest:120}]}}
+// Eindeutige ID: Zeit + Zufall (nur Zeit kollidierte, wenn mehrere Vorlagen in derselben Millisekunde entstanden)
+const newId=(pre='p')=>pre+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+function defaultPlan(){return {id:newId(),kind:'iv',name:'5 × 1000 m',warm:10,cool:5,sets:[{reps:5,dist:1000,pace:240,rest:120}]}}
 let plans=LS.get('iv_plans',null)||[defaultPlan()];
+// Reparatur: doppelte IDs (frühere Neuinstallationen) bekommen eine neue ID
+{const seen=new Set();let fix=false;plans.forEach(p=>{if(seen.has(p.id)){p.id=newId();fix=true}seen.add(p.id)});if(fix)try{localStorage.setItem('iv_plans',JSON.stringify(plans))}catch(e){}}
 let kindSel=LS.get('iv_kind','iv');if(!KINDS[kindSel])kindSel='iv';
+// Einmalig: Vorlage für die letzte Einheit vor dem Wettkampf (6.11.2026)
+if(!LS.get('iv_tpl_final',false)){
+  if(!plans.some(p=>p.id==='p-final'))plans.push({id:'p-final',kind:'iv',name:'Finale Vorbereitung',warm:0,cool:0,sets:[
+    {reps:1,dist:3000,pace:390,rest:60,tol:30,nm:'Dauerlauf'},   // ganz locker, nicht auspowern
+    {reps:3,dist:80,pace:300,rest:60,nm:'Steigerung'}]});        // flüssig aufs Renntempo, entspannt, danach abbrechen
+  try{localStorage.setItem('iv_plans',JSON.stringify(plans));localStorage.setItem('iv_tpl_final','true')}catch(e){}
+}
 // Einmalige Umstellung (v3): bisherige Trainings = Intervalle, Rennmodus-Einstellung → Renn-Vorlage, Beispiel-Lauf
 if(!LS.get('iv_mig3',false)){
   plans.forEach(p=>{if(!p.kind)p.kind='iv'});
-  if(!plans.some(p=>p.kind==='run'))plans.unshift({id:'p'+(Date.now()-2),kind:'run',name:'Lockerer Lauf',goal:'time',dur:45,dist:8000,pace:0});
+  if(!plans.some(p=>p.kind==='run'))plans.unshift({id:newId(),kind:'run',name:'Lockerer Lauf',goal:'time',dur:45,dist:8000,pace:0});
   if(!plans.some(p=>p.kind==='race')){const r=LS.get('iv_race',null)||{dist:'10k',km:10,time:3000,ant:!!LS.get('iv_coach',null)};
-    plans.push({id:'p'+(Date.now()-1),kind:'race',name:`${{'5k':'5 km','10k':'10 km','hm':'Halbmarathon'}[r.dist]||(r.km||10)+' km'} auf Zeit`,dist:r.dist||'10k',km:r.km||10,time:r.time||3000,ant:!!r.ant})}
+    plans.push({id:newId(),kind:'race',name:`${{'5k':'5 km','10k':'10 km','hm':'Halbmarathon'}[r.dist]||(r.km||10)+' km'} auf Zeit`,dist:r.dist||'10k',km:r.km||10,time:r.time||3000,ant:!!r.ant})}
   try{localStorage.setItem('iv_plans',JSON.stringify(plans));localStorage.setItem('iv_mig3','true')}catch(e){}
 }
 let runs=LS.get('iv_hist',[]); // alle gespeicherten Läufe (früher "history", kollidierte mit window.history)
@@ -505,10 +516,12 @@ function saveSettings(){LS.set('iv_settings',settings)}
 function buildSteps(p){
   const st=[];
   if(p.warm>0)st.push({type:'warm',dur:p.warm*60,label:'Warm-up'});
-  const total=p.sets.reduce((a,s)=>a+s.reps,0),nm=p.nm||'Intervall';let n=0;
+  const total=p.sets.reduce((a,s)=>a+s.reps,0);let n=0;
   p.sets.forEach((s,si)=>{for(let r=0;r<s.reps;r++){n++;
+    // s.nm: eigener Name des Satzes (z. B. "Steigerung") mit eigener Zählung; sonst gemeinsame Zählung
+    const nm=s.nm||p.nm||'Intervall',k=s.nm?r+1:n,t=s.nm?s.reps:total;
     // tol: Pace-Toleranz in s/km (lockere Läufe), 0 = Standard
-    st.push({type:'run',dist:s.dist,pace:s.pace,label:total>1?`${nm} ${n}/${total}`:nm,n,total,nm,tol:s.tol||0});
+    st.push({type:'run',dist:s.dist,pace:s.pace,label:t>1?`${nm} ${k}/${t}`:nm,n:k,total:t,nm,tol:s.tol||0});
     const last=(si===p.sets.length-1&&r===s.reps-1);
     if(!last&&s.rest>0)st.push({type:'rest',dur:s.rest,label:'Pause'});
   }});
@@ -593,7 +606,7 @@ function startTpl(id){
 /* ---------- Editor (je Art) ---------- */
 let ed=null,edNew=false;
 function newPlan(){
-  const id='p'+Date.now();
+  const id=newId();
   ed=kindSel==='run'?{id,kind:'run',name:'Neuer Lauf',goal:'time',dur:45,dist:8000,pace:0}
     :kindSel==='race'?{id,kind:'race',name:'Neues Rennen',dist:'10k',km:10,time:3000,ant:!!coach}
     :{id,kind:'iv',name:'Neues Intervalltraining',warm:10,cool:5,sets:[{reps:5,dist:1000,pace:240,rest:120}]};
@@ -755,7 +768,8 @@ const TK={
   n:x=>'n'+Math.max(0,Math.min(59,Math.round(x))),
   dur(s){s=Math.round(s);const m=Math.floor(s/60),r=s%60;return m?[m===1?'eene':TK.n(m),m===1?'minute':'minuten',...(r?[TK.n(r)]:[])]:[TK.n(r),'sekunden']},
   km(m){const k=Math.round(m/100)/10,i=Math.floor(k),d=Math.round((k-i)*10);return [i===1&&!d?'een':TK.n(i),...(d?['komma',TK.n(d)]:[]),'km']},
-  dist(m){m=Math.round(m/50)*50;
+  dist(m){if(Math.round(m)%100>=60&&m<10000)return []; // z. B. 80 m: keine Bausteine für 60–99 → Distanz weglassen statt falsch runden
+    m=Math.round(m/50)*50;
     if(m>=1000&&m%1000===0)return [m===1000?'een':TK.n(m/1000),'km'];
     if(m>=10000)return TK.km(m);
     const th=Math.floor(m/1000),h=Math.floor(m%1000/100),r=m%100;
@@ -763,7 +777,7 @@ const TK={
   time(t){t=Math.round(t);const h=Math.floor(t/3600),m=Math.floor(t%3600/60),r=t%60;return h?[h===1?'eene':TK.n(h),'stunde',TK.n(m),...(r?[TK.n(r)]:[])]:[TK.n(m),...(r?[TK.n(r)]:['minuten'])]},
   secs:a=>a<60?(a===1?['eene','sekunde']:[TK.n(a),'sekunden']):TK.dur(a),
   pace(p,full){let m=Math.floor(p/60),r=Math.round(p%60);if(r===60){m++;r=0}return ['tempo',TK.n(m),r?TK.n(r):'minuten',...(full?['prokm']:[])]},
-  nm:n=>({'Intervall':'nm_iv','Sprint':'nm_sprint','Tempo':'nm_tempo','Zieltempo':'nm_ziel','Dauerlauf':'nm_dauer','Langer Lauf':'nm_lang','Testlauf':'nm_test'})[n]||'nm_iv'
+  nm:n=>({'Intervall':'nm_iv','Sprint':'nm_sprint','Steigerung':'nm_sprint','Tempo':'nm_tempo','Zieltempo':'nm_ziel','Dauerlauf':'nm_dauer','Langer Lauf':'nm_lang','Testlauf':'nm_test'})[n]||'nm_iv'
 };
 // Ansage: Berliner Stimme (tokens) oder iPhone-Stimme (text)
 function talk(text,tokens,low=false){if(berlinOn()&&tokens)say(tokens,low);else speak(text,0,low)}
@@ -943,7 +957,7 @@ function enterStep(i){
   else if(s.type==='rest')t=`Pause. ${spDur(s.dur)}.`;
   else t=`Cool-down. ${spDur(s.dur)}.`;
   let tk;
-  if(s.type==='run')tk=[...(s.total>1?(s.n===s.total?['@last']:[TK.nm(s.nm),TK.n(s.n),'von',TK.n(s.total)]):[TK.nm(s.nm)]),...TK.dist(s.dist),...TK.pace(s.pace,true)];
+  if(s.type==='run')tk=[...(s.total>1?(s.n===s.total&&s.nm==='Intervall'?['@last']:[TK.nm(s.nm),TK.n(s.n),'von',TK.n(s.total)]):[TK.nm(s.nm)]),...TK.dist(s.dist),...TK.pace(s.pace,true)];
   else tk=['@'+s.type,...TK.dur(s.dur)];
   if(R.race){t=`Rennen über ${raceName(R.race.D)}. Zielzeit ${spTime(R.race.T)}. Ruhig angehen.`;tk=['@rstart|@start']}
   if(R.free){const f=R.free;
@@ -1664,7 +1678,7 @@ async function trackAll(){const db=await TDB.open();if(!db)return [];
    Backup = alle App-Daten aus localStorage + Strecken als eine JSON-Datei.
    Beim Wiederherstellen wird alles geprüft und gesäubert (IDs, Arten), weil
    die Werte später in HTML und onclick-Attributen landen. */
-const BK_KEYS=['iv_plans','iv_hist','iv_settings','iv_coach','iv_kind','iv_tab','iv_histf','iv_mig3'];
+const BK_KEYS=['iv_plans','iv_hist','iv_settings','iv_coach','iv_kind','iv_tab','iv_histf','iv_mig3','iv_tpl_final'];
 const safeId=x=>typeof x==='string'&&/^[\w-]{1,40}$/.test(x);
 const rid=pre=>pre+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 function toast(msg,ms=4000){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,ms)}
@@ -1700,14 +1714,21 @@ async function restoreAll(file){
   LS.set('iv_mig3',true);
   const kd=get('iv_kind');if(KINDS[kd])LS.set('iv_kind',kd);
   for(const [id,pts] of (Array.isArray(d.tracks)?d.tracks:[]))if(safeId(id)&&Array.isArray(pts))await trackPut(id,pts);
-  location.reload();
+  // ohne Neuladen übernehmen (ein sofortiges Neuladen kann frisch geschriebene Daten verlieren)
+  plans=pl;runs=rs;coach=co;settings=Object.assign(settings,st&&typeof st==='object'?st:{});kindSel=KINDS[kd]?kd:kindSel;
+  paintSettings();show('home');toast(`Backup wiederhergestellt: ${pl.length} Vorlagen, ${rs.length} Läufe${co?', Antonias Plan':''}`);
+}
+
+// Einstellungs-Schalter aus settings übernehmen (Start und nach Wiederherstellung)
+function paintSettings(){
+  $('#s-beep').checked=settings.beep;$('#s-music').checked=settings.musicMode;$('#s-kalman').checked=settings.kalman;$('#s-doppler').checked=settings.doppler;$('#s-voice').checked=settings.voice;$('#s-berlin').checked=settings.berlin;$('#s-hints').checked=settings.hints;
+  $('#s-startlock').checked=settings.startLocked;$('#s-autolock').checked=settings.autoLock;
+  $('#s-vol').value=settings.volume;$('#s-vboost').value=settings.vboost;$('#s-rate').value=settings.rate;$('#s-corr').value=settings.corr;
 }
 
 /* ---------- Init ---------- */
 (function(){
-  $('#s-beep').checked=settings.beep;$('#s-music').checked=settings.musicMode;$('#s-kalman').checked=settings.kalman;$('#s-doppler').checked=settings.doppler;$('#s-voice').checked=settings.voice;$('#s-berlin').checked=settings.berlin;$('#s-hints').checked=settings.hints;
-  $('#s-startlock').checked=settings.startLocked;$('#s-autolock').checked=settings.autoLock;
-  $('#s-vol').value=settings.volume;$('#s-vboost').value=settings.vboost;$('#s-rate').value=settings.rate;$('#s-corr').value=settings.corr;
+  paintSettings();
   // Offline-Fähigkeit (nur über https bzw. localhost möglich)
   if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js').then(()=>navigator.serviceWorker.ready).then(()=>{const e=$('#s-off');if(e)e.textContent=' · Offline bereit'}).catch(()=>{});
   const vi=window.VOICE_INFO,vn=window.VOICE_BERLIN?Object.keys(VOICE_BERLIN).length:0;

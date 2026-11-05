@@ -3,19 +3,8 @@ const http = require('http');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { ok, eq, newPage, close, noErrors, ROOT } = require('./helpers');
+const { ok, eq, newPage, close, noErrors, ROOT, serve } = require('./helpers');
 
-function serve(dir) {
-  const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8' };
-  const srv = http.createServer((req, res) => {
-    const p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
-    const f = path.join(dir, p.endsWith('/') ? p + 'index.html' : p);
-    if (!f.startsWith(dir) || !fs.existsSync(f)) { res.writeHead(404); return res.end(); }
-    res.writeHead(200, { 'Content-Type': types[path.extname(f)] || 'application/octet-stream' });
-    fs.createReadStream(f).pipe(res);
-  });
-  return new Promise(r => srv.listen(0, '127.0.0.1', () => r(srv)));
-}
 
 exports['Startet offline aus dem Speicher, Update ersetzt die Stimme'] = async b => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'll-srv-'));

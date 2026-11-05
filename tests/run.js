@@ -19,6 +19,7 @@ const { chromium } = require('playwright');
     }
   }
   await browser.close();
+  require('./helpers').stop();
   console.log(`\n${pass} bestanden, ${fail} fehlgeschlagen`);
   process.exit(fail ? 1 : 0);
 })();

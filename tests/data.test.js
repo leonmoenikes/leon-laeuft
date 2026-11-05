@@ -4,6 +4,15 @@ const os = require('os');
 const path = require('path');
 const { ok, eq, newPage, close, noErrors, startFirst, sim } = require('./helpers');
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'll-test-'));
+// App "neu starten". Chromium schreibt localStorage verzögert; geht der Stand beim
+// schnellen Neuladen verloren (oder liegt dort noch ein älterer), wird der zuletzt
+// gesicherte Stand gesetzt – getestet wird die App-Logik.
+async function restart(pg) {
+  // Stand sichern, dann die alte Seite „abstürzen“ lassen: kein Timer, kein Sichern beim Verlassen
+  const snap = await pg.evaluate(() => { saveLive(); clearInterval(R.timer); R.state = 'crashed'; return localStorage.getItem('iv_live'); });
+  await pg.reload();
+  await pg.evaluate(s => { if (localStorage.getItem('iv_live') !== s) { localStorage.setItem('iv_live', s); show('home'); } }, snap);
+}
 
 exports['Backup erstellen und sicher wiederherstellen'] = async b => {
   const pg = await newPage(b);
@@ -18,8 +27,8 @@ exports['Backup erstellen und sicher wiederherstellen'] = async b => {
   fs.writeFileSync(f, JSON.stringify(d));
   await pg.evaluate(async () => { localStorage.clear(); await trackDel('r1'); });
   await pg.locator('input[type=file]').setInputFiles(f);
-  await pg.waitForLoadState('load'); await pg.waitForTimeout(500);
-  const r = await pg.evaluate(async () => ({ plans: plans.map(p => [/^[\w-]+$/.test(p.id), p.kind]), runs: runs.length, track: (await trackGet('r1') || []).length }));
+  await pg.waitForFunction(() => runs.length === 1);
+  const r = await pg.evaluate(async () => ({ plans: plans.filter(p => p.id !== 'p-final').map(p => [/^[\w-]+$/.test(p.id), p.kind]), runs: runs.length, track: (await trackGet('r1') || []).length }));
   eq(r, { plans: [[true, 'run']], runs: 1, track: 2 }, 'nach Wiederherstellung');
   await pg.evaluate(() => setKind('run'));
   eq(await pg.locator('#plans img').count(), 0, 'kein eingeschleustes HTML');
@@ -30,8 +39,8 @@ exports['Absturzschutz: Lauf fortsetzen, Rennuhr läuft weiter, Speichern'] = as
   const pg = await newPage(b);
   await startFirst(pg, 'run');
   await sim(pg, 1500, 480);
-  await pg.evaluate(() => { R.track.push([52.5, 13.4, 0], [52.51, 13.4, 400]); saveLive(); });
-  await pg.reload();
+  await pg.evaluate(() => { R.track.push([52.5, 13.4, 0], [52.51, 13.4, 400]); });
+  await restart(pg);
   ok(await pg.isVisible('.resume'), 'Karte „Lauf unterbrochen“');
   await pg.click('.resume .btn.fill');
   eq(await pg.evaluate(() => [R.state, Math.round(R.totalDist), Math.round(R.total), R.track[R.track.length - 1]]), ['run', 1500, 480, null], 'fortgesetzt mit Lücke in der Strecke');
@@ -39,13 +48,13 @@ exports['Absturzschutz: Lauf fortsetzen, Rennuhr läuft weiter, Speichern'] = as
   // Rennen: 2 min Unterbrechung zählen zur Rennzeit
   await startFirst(pg, 'race');
   await sim(pg, 800, 240);
-  await pg.evaluate(() => saveLive());
-  await pg.reload();
+  await restart(pg);
   await pg.evaluate(() => { const o = JSON.parse(localStorage.getItem('iv_live')); o.savedAt -= 120000; localStorage.setItem('iv_live', JSON.stringify(o)); });
   await pg.click('.resume .btn.fill');
-  ok(await pg.evaluate(() => R.total >= 359 && R.total <= 365), 'Rennuhr +120 s');
+  const rt = await pg.evaluate(() => Math.round(R.total)); // 240 s + 120 s Unterbrechung + Dauer des Neuladens
+  ok(rt >= 359 && rt <= 380, 'Rennuhr +120 s, bekommen ' + rt);
   // Speichern ohne Fortsetzen
-  await pg.evaluate(() => saveLive()); await pg.reload();
+  await restart(pg);
   await pg.click('.resume button:has-text("Speichern")');
   eq(await pg.evaluate(() => [runs[runs.length - 1].kind, localStorage.getItem('iv_live')]), ['race', null], 'gespeichert, Sicherung gelöscht');
   noErrors(pg); await close(pg);

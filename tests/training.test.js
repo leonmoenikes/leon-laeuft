@@ -6,9 +6,9 @@ exports['Umstellung alter Daten (v3): Intervalle bleiben, Rennen wird Vorlage'] 
     localStorage.setItem('iv_plans', JSON.stringify([{ id: 'p1', name: '5 × 1000 m', warm: 10, cool: 5, sets: [{ reps: 5, dist: 1000, pace: 240, rest: 120 }] }]));
     localStorage.setItem('iv_race', JSON.stringify({ dist: 'hm', km: 10, time: 6300, ant: true })); } });
   const p = await pg.evaluate(() => plans.map(p => [p.kind, p.name, p.dist || null, p.time || null, p.ant || false]));
-  eq(p, [['run', 'Lockerer Lauf', 8000, null, false], ['iv', '5 × 1000 m', null, null, false], ['race', 'Halbmarathon auf Zeit', 'hm', 6300, true]], 'Vorlagen nach Umstellung');
+  eq(p, [['run', 'Lockerer Lauf', 8000, null, false], ['iv', '5 × 1000 m', null, null, false], ['iv', 'Finale Vorbereitung', null, null, false], ['race', 'Halbmarathon auf Zeit', 'hm', 6300, true]], 'Vorlagen nach Umstellung');
   await pg.reload();
-  eq(await pg.evaluate(() => plans.length), 3, 'Umstellung läuft nur einmal');
+  eq(await pg.evaluate(() => plans.length), 4, 'Umstellung läuft nur einmal');
   noErrors(pg); await close(pg);
 };
 
@@ -67,5 +67,38 @@ exports['Intervalle: Überspringen in der Danach-Karte, Zeitüberlauf zählt wei
   // Bildschirm war 150 s aus, Pause dauert 120 s → 30 s im nächsten Intervall
   const r = await pg.evaluate(() => { R.stepTime = 0; R.last = performance.now() - 150000; tick(); return [R.steps[R.i].type, Math.round(R.stepTime)]; });
   eq(r, ['run', 30], 'Überlauf');
+  noErrors(pg); await close(pg);
+};
+
+exports['Vorlage „Finale Vorbereitung“: 3 km locker + 3 Steigerungen, passende Ansagen'] = async b => {
+  const pg = await newPage(b);
+  const p = await pg.evaluate(() => { const p = plans.find(x => x.id === 'p-final'); return { kind: p.kind, steps: buildSteps(p).map(s => s.label + (s.dist ? ' ' + s.dist : ' ' + s.dur)) }; });
+  eq(p, { kind: 'iv', steps: ['Dauerlauf 3000', 'Pause 60', 'Steigerung 1/3 80', 'Pause 60', 'Steigerung 2/3 80', 'Pause 60', 'Steigerung 3/3 80'] }, 'Ablauf');
+  await recordSay(pg);
+  await pg.evaluate(() => { setKind('iv'); show('home'); });
+  await pg.click('#plans .group:has-text("Finale Vorbereitung") .play');
+  await pg.click('#runwait .btn.fill');
+  await sim(pg, 1000, 390);                         // km 1 im lockeren Tempo
+  await sim(pg, 3000, 1170); await sim(pg, 0, 60);  // Ende Dauerlauf, Pause vorbei
+  await pg.evaluate(() => { R.stepDist = 80; tick(); R.stepTime = 60; R.last = performance.now(); tick(); R.stepDist = 80; tick(); });
+  const s = (await said(pg)).join(' | ');
+  ok(/#beep nm_dauer n3 km tempo n6 n30 prokm/.test(s), 'Start: Dauerlauf 3 km @ 6:30: ' + s.slice(0, 90));
+  ok(/#beep nm_sprint n1 von n3 tempo n5 minuten prokm/.test(s), 'Steigerung ohne falsche Distanz-Zahl: ' + s);
+  ok(!/last_\d/.test(s), 'kein „Letztet Intervall … reiß dir ma zusamm“');
+  ok(!/n59 meta/.test(s), 'keine falsche „neunundfuffzig Meta“');
+  await pg.reload();
+  eq(await pg.evaluate(() => plans.filter(p => p.id === 'p-final').length), 1, 'Vorlage nur einmal angelegt');
+  noErrors(pg); await close(pg);
+};
+
+exports['Neuinstallation: alle Vorlagen haben eindeutige IDs, doppelte werden repariert'] = async b => {
+  const pg = await newPage(b);
+  const ids = await pg.evaluate(() => plans.map(p => p.id));
+  eq(new Set(ids).size, ids.length, 'IDs eindeutig');
+  // alter Zustand mit doppelter ID wird beim Start repariert
+  await pg.evaluate(() => { const p = JSON.parse(localStorage.getItem('iv_plans')); p[1].id = p[0].id; localStorage.setItem('iv_plans', JSON.stringify(p)); });
+  await pg.reload();
+  const ids2 = await pg.evaluate(() => plans.map(p => p.id));
+  eq(new Set(ids2).size, ids2.length, 'doppelte ID repariert');
   noErrors(pg); await close(pg);
 };

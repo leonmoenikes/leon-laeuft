@@ -1,4 +1,4 @@
-// Antonia-Modus: Plan, Abhaken, Mitlernen, Verschieben
+// Planung (früher Antonia-Modus): Plan, Abhaken, Mitlernen, Verschieben
 const { ok, eq, newPage, close, noErrors } = require('./helpers');
 const setup = () => { localStorage.setItem('iv_mig3', 'true'); };
 
@@ -47,5 +47,17 @@ exports['Plan lernt mit, Einheiten verschieben, Neuberechnung behält alles'] = 
   eq(r2, [8, 7], 'verschoben (1 Tag + 1 Woche), Plan endet eine Woche später');
   await pg.evaluate(() => { show('coach'); cf = newCf(); createCoach(); });
   eq(await pg.evaluate(() => [coach.adj, coach.sessions.filter(s => s.done).length, coach.sessions.some(s => s.off)]), [-4, 3, true], 'Neuberechnung behält Anpassung, Erledigtes, Verschiebungen');
+  noErrors(pg); await close(pg);
+};
+
+exports['Reiter heißt „Planung“; späterer Plan schaltet die Namens-Ansprache nicht um'] = async b => {
+  const pg = await newPage(b, { init: setup });
+  eq(await pg.textContent('.tabbar button[data-v=coach]'), 'Planung', 'Reiter');
+  await pg.evaluate(() => show('coach'));
+  eq(await pg.textContent('#coachbody .large'), 'Planung', 'Überschrift');
+  eq(await pg.evaluate(() => settings.antName), false, 'ohne Plan: kein Name');
+  await pg.evaluate(() => { cf = newCf(); createCoach(); });
+  await pg.reload();
+  eq(await pg.evaluate(() => [settings.antName, HK.coach.t]), [false, 'Planung'], 'nach Plan-Erstellung weiterhin kein Name');
   noErrors(pg); await close(pg);
 };

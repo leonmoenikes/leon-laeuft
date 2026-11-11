@@ -65,7 +65,7 @@ exports['Intervalle: Überspringen in der Danach-Karte, Zeitüberlauf zählt wei
   await pg.click('#rskip');
   eq(await pg.evaluate(() => R.steps[R.i].type), 'rest', 'nach Überspringen: Pause');
   // Bildschirm war 150 s aus, Pause dauert 120 s → 30 s im nächsten Intervall
-  const r = await pg.evaluate(() => { R.stepTime = 0; R.last = performance.now() - 150000; tick(); return [R.steps[R.i].type, Math.round(R.stepTime)]; });
+  const r = await pg.evaluate(() => { R.stepTime = 0; R.last = Date.now() - 150000; tick(); return [R.steps[R.i].type, Math.round(R.stepTime)]; });
   eq(r, ['run', 30], 'Überlauf');
   noErrors(pg); await close(pg);
 };
@@ -80,7 +80,7 @@ exports['Vorlage „Finale Vorbereitung“: 3 km locker + 3 Steigerungen, passen
   await pg.click('#runwait .btn.fill');
   await sim(pg, 1000, 390);                         // km 1 im lockeren Tempo
   await sim(pg, 3000, 1170); await sim(pg, 0, 60);  // Ende Dauerlauf, Pause vorbei
-  await pg.evaluate(() => { R.stepDist = 80; tick(); R.stepTime = 60; R.last = performance.now(); tick(); R.stepDist = 80; tick(); });
+  await pg.evaluate(() => { R.stepDist = 80; tick(); R.stepTime = 60; R.last = Date.now(); tick(); R.stepDist = 80; tick(); });
   const s = (await said(pg)).join(' | ');
   ok(/#beep nm_dauer n3 km tempo n6 n30 prokm/.test(s), 'Start: Dauerlauf 3 km @ 6:30: ' + s.slice(0, 90));
   ok(/#beep nm_sprint n1 von n3 tempo n5 minuten prokm/.test(s), 'Steigerung ohne falsche Distanz-Zahl: ' + s);

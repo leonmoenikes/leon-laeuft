@@ -427,6 +427,7 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
     <label class="cell"><span class="l">Gesperrt starten</span><input class="sw" type="checkbox" id="s-startlock" onchange="settings.startLocked=this.checked;saveSettings()"></label>
     <label class="cell"><span class="l">Automatisch sperren</span><input class="sw" type="checkbox" id="s-autolock" onchange="settings.autoLock=this.checked;saveSettings()"></label>
   </div>
+  <p class="foot">Die App misst nur, solange der Bildschirm an ist – darum bleibt er während des Laufs wach. Sperrt sich das iPhone trotzdem, läuft die Zeit weiter und die Strecke wird beim Entsperren als Luftlinie ergänzt; Ansagen fallen in der Zeit aus.</p>
   <p class="foot">Die Sperre schützt nur die App. Nach 10 Sekunden ohne Berührung sperrt sie sich automatisch. Entsperren per Schieberegler.</p>
   <div class="head">Ton</div>
   <div class="group">
@@ -466,8 +467,11 @@ th{color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase}
 </div>
 
 <script>
-const APP_VER='2026-11-05.3'; // bei Änderungen hochzählen – wird in den Einstellungen angezeigt
+const APP_VER='2026-11-11.1'; // bei Änderungen hochzählen – wird in den Einstellungen angezeigt
 /* ---------- Helfer ---------- */
+// Zeitbasis für die Lauf-Engine: Wanduhr. performance.now() bleibt auf dem iPhone stehen, solange das
+// Gerät schläft (gesperrter Bildschirm ohne Musik) – die Laufzeit wäre danach zu kurz.
+const nowMs=()=>Date.now();
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=v=>parseInt(v)||0;
@@ -482,7 +486,7 @@ function fmtDate(iso){return new Date(iso).toLocaleString('de-DE',{day:'2-digit'
 /* Vorlagen haben eine Art (kind):
    run  = Lauf: Ziel Dauer (dur, min), Distanz (dist, m) oder frei; optional Zieltempo (pace, s/km)
    iv   = Intervalle: warm, cool, sets [{reps, dist, pace, rest}]
-   race = Rennen: dist ('5k'|'10k'|'hm'|'free'), km (bei frei), time (Zielzeit s), ant (Ansprache Antonia) */
+   race = Rennen: dist ('5k'|'10k'|'hm'|'free'), km (bei frei), time (Zielzeit s) */
 const KINDS={run:{t:'Lauf',nw:'Neuer Lauf'},iv:{t:'Intervalle',nw:'Neues Intervalltraining'},race:{t:'Rennen',nw:'Neues Rennen'}};
 // Eindeutige ID: Zeit + Zufall (nur Zeit kollidierte, wenn mehrere Vorlagen in derselben Millisekunde entstanden)
 const newId=(pre='p')=>pre+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -508,10 +512,10 @@ if(!LS.get('iv_mig3',false)){
 }
 let runs=LS.get('iv_hist',[]); // alle gespeicherten Läufe (früher "history", kollidierte mit window.history)
 let settings=Object.assign({beep:true,voice:true,hints:true,volume:0.8,rate:1,corr:0,startLocked:true,autoLock:true,musicMode:false,kalman:true,doppler:true,berlin:true,vboost:1.6},LS.get('iv_settings',{}));
-// Einmalige Umstellung (v2): Musik-Modus aus, damit die Berliner Stimme spricht – sie liegt jetzt sauber über der Musik
 // Antonia mit Namen ansprechen: Voreinstellung einmalig – an, wenn auf diesem Gerät schon ein Plan
 // existiert (Antonias iPhone). Danach fest gespeichert, damit ein später angelegter Plan sie nicht umschaltet.
 if(typeof settings.antName!=='boolean'){settings.antName=!!LS.get('iv_coach',null);if(localStorage.getItem('iv_settings'))LS.set('iv_settings',settings)}
+// Einmalige Umstellung (v2): Musik-Modus aus, damit die Berliner Stimme spricht – sie liegt jetzt sauber über der Musik
 if((settings.ver||1)<2){settings.musicMode=false;settings.ver=2;try{if(localStorage.getItem('iv_settings'))LS.set('iv_settings',settings)}catch(e){}}
 const savePlans=()=>LS.set('iv_plans',plans);
 const saveHist=()=>LS.set('iv_hist',runs);
@@ -612,11 +616,11 @@ let ed=null,edNew=false;
 function newPlan(){
   const id=newId();
   ed=kindSel==='run'?{id,kind:'run',name:'Neuer Lauf',goal:'time',dur:45,dist:8000,pace:0}
-    :kindSel==='race'?{id,kind:'race',name:'Neues Rennen',dist:'10k',km:10,time:3000,ant:!!coach}
+    :kindSel==='race'?{id,kind:'race',name:'Neues Rennen',dist:'10k',km:10,time:3000}
     :{id,kind:'iv',name:'Neues Intervalltraining',warm:10,cool:5,sets:[{reps:5,dist:1000,pace:240,rest:120}]};
   edNew=true;renderEd();show('edit');
 }
-function editPlan(id){ed=JSON.parse(JSON.stringify(plans.find(p=>p.id===id)));edNew=false;renderEd();show('edit')}
+function editPlan(id){const p=plans.find(p=>p.id===id);if(!p)return;ed=JSON.parse(JSON.stringify(p));edNew=false;renderEd();show('edit')}
 function segE(key,opts,style=''){return `<div class="segc"${style?` style="${style}"`:''}>${opts.map(([v,l])=>`<button class="${ed[key]===v?'on':''}" onclick="edSet('${key}',${JSON.stringify(v).replace(/"/g,"'")})">${l}</button>`).join('')}</div>`}
 function edSet(k,v){ed[k]=v;if(k==='dist'&&ed.kind==='race'&&RACE_T[v])ed.time=RACE_T[v];renderEd()}
 // Zeit h:mm:ss bzw. Tempo m:ss als Zahlenfelder
@@ -703,8 +707,8 @@ function setAudioSession(){try{if(navigator.audioSession&&navigator.audioSession
 function audioOn(){
   setAudioSession();
   try{if(!ac)ac=new(window.AudioContext||window.webkitAudioContext)();
-    clearTimeout(acIdle);
     if(ac.state!=='running')ac.resume().catch(()=>{});
+    audioIdle(0); // immer wieder anhalten, auch wenn danach nichts abgespielt wird
   }catch(e){}
   return !!ac;
 }
@@ -712,7 +716,7 @@ function audioOn(){
 let acUntil=0;
 function audioIdle(sec){
   if(!ac)return;acUntil=Math.max(acUntil,ac.currentTime+sec);clearTimeout(acIdle);
-  acIdle=setTimeout(()=>{try{if(!ac||ac.state!=='running')return;if(ac.currentTime>=acUntil-0.05)ac.suspend();else audioIdle(0)}catch(e){}},(acUntil-ac.currentTime)*1000+500);
+  acIdle=setTimeout(()=>{try{if(!ac||ac.state==='suspended'||ac.state==='closed')return;if(ac.currentTime>=acUntil-0.05)ac.suspend();else audioIdle(0)}catch(e){}},(acUntil-ac.currentTime)*1000+500);
 }
 function unlockAudio(){
   if(audioOn()){try{const o=ac.createOscillator(),g=ac.createGain();g.gain.value=0.0001;o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+0.05)}catch(e){}audioIdle(0.1)}
@@ -769,7 +773,8 @@ function voiceBus(){
 // Bausteine für Zahlen, Distanzen, Zeiten und Tempo
 const TK={
   n:x=>'n'+Math.max(0,Math.min(59,Math.round(x))),
-  dur(s){s=Math.round(s);const m=Math.floor(s/60),r=s%60;return m?[m===1?'eene':TK.n(m),m===1?'minute':'minuten',...(r?[TK.n(r)]:[])]:[TK.n(r),'sekunden']},
+  dur(s){s=Math.round(s);if(s>=3600)return TK.time(Math.round(s/60)*60); // ab 1 h: „eene Stunde dreißig“
+    const m=Math.floor(s/60),r=s%60;return m?[m===1?'eene':TK.n(m),m===1?'minute':'minuten',...(r?[TK.n(r)]:[])]:[TK.n(r),'sekunden']},
   km(m){const k=Math.round(m/100)/10,i=Math.floor(k),d=Math.round((k-i)*10);return [i===1&&!d?'een':TK.n(i),...(d?['komma',TK.n(d)]:[]),'km']},
   dist(m){if(Math.round(m)%100>=60&&m<10000)return []; // z. B. 80 m: keine Bausteine für 60–99 → Distanz weglassen statt falsch runden
     m=Math.round(m/50)*50;
@@ -777,7 +782,7 @@ const TK={
     if(m>=10000)return TK.km(m);
     const th=Math.floor(m/1000),h=Math.floor(m%1000/100),r=m%100;
     return [...(th?['t'+th]:[]),...(h?['h'+h]:[]),...(r?[TK.n(r)]:[]),'meta']},
-  time(t){t=Math.round(t);const h=Math.floor(t/3600),m=Math.floor(t%3600/60),r=t%60;return h?[h===1?'eene':TK.n(h),'stunde',TK.n(m),...(r?[TK.n(r)]:[])]:[TK.n(m),...(r?[TK.n(r)]:['minuten'])]},
+  time(t){t=Math.round(t);const h=Math.floor(t/3600),m=Math.floor(t%3600/60),r=t%60;return h?[h===1?'eene':TK.n(h),'stunde',...(m||r?[TK.n(m)]:[]),...(r?[TK.n(r)]:[])]:[TK.n(m),...(r?[TK.n(r)]:['minuten'])]},
   secs:a=>a<60?(a===1?['eene','sekunde']:[TK.n(a),'sekunden']):TK.dur(a),
   pace(p,full){let m=Math.floor(p/60),r=Math.round(p%60);if(r===60){m++;r=0}return ['tempo',TK.n(m),r?TK.n(r):'minuten',...(full?['prokm']:[])]},
   nm:n=>({'Intervall':'nm_iv','Sprint':'nm_sprint','Steigerung':'nm_sprint','Tempo':'nm_tempo','Zieltempo':'nm_ziel','Dauerlauf':'nm_dauer','Langer Lauf':'nm_lang','Testlauf':'nm_test'})[n]||'nm_iv'
@@ -825,13 +830,25 @@ function testAudio(){
   else{beep(1320,0.35);speak('Intervall 1 von 5. 1000 Meter. Pace 4 Minuten pro Kilometer.',400)}
 }
 const spDist=m=>(m>=1000&&m%1000===0)?`${m/1000} Kilometer`:`${m} Meter`;
-const spPace=p=>{const m=Math.floor(p/60),s=Math.round(p%60);return `${m} Minuten${s?' '+s:''} pro Kilometer`};
-const spDur=s=>(s>=60&&s%60===0)?`${s/60} ${s/60===1?'Minute':'Minuten'}`:`${s} Sekunden`;
+const spPace=p=>{let m=Math.floor(p/60),s=Math.round(p%60);if(s===60){m++;s=0}return `${m} Minuten${s?' '+s:''} pro Kilometer`};
+const spDur=s=>s>=3600?`${Math.floor(s/3600)} ${s<7200?'Stunde':'Stunden'}${s%3600>=60?' '+Math.round(s%3600/60)+' Minuten':''}`:(s>=60&&s%60===0)?`${s/60} ${s/60===1?'Minute':'Minuten'}`:`${s} Sekunden`;
 
 /* ---------- Wake Lock ---------- */
 async function requestWake(){if(!R||(R.wl&&!R.wl.released))return;try{if(!('wakeLock' in navigator))throw 0;R.wl=await navigator.wakeLock.request('screen');R.wlOk=true}catch(e){if(R)R.wlOk=false}const t=$('#wltip');if(t)t.hidden=!R||R.wlOk!==false}
 function releaseWake(){try{if(R&&R.wl){R.wl.release();R.wl=null}}catch(e){}}
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&R&&R.state==='run')requestWake()});
+/* Bildschirm aus / App im Hintergrund: iOS hält Web-Apps dann an (kein GPS, keine Ansagen).
+   Beim Zurückkommen läuft die Zeit korrekt weiter (Wanduhr), die Strecke wird mit dem
+   nächsten GPS-Punkt als Luftlinie ergänzt und die Lücke im Lauf vermerkt. */
+document.addEventListener('visibilitychange',()=>{
+  if(!R||R.state!=='run')return;
+  if(document.visibilityState==='hidden'){R.hidAt=nowMs();return}
+  requestWake();
+  const gap=R.hidAt?(nowMs()-R.hidAt)/1000:0;R.hidAt=0;
+  if(gap<5||R.paused)return;
+  R.gap=(R.gap||0)+gap;R.win=[];R.spd=null;if(R.kf)R.kf.v=1e6; // nächster GPS-Punkt wird direkt übernommen
+  tick();
+  if(R)toast(`Bildschirm war ${fmtTime(gap)} aus. Die Zeit lief weiter, die Strecke dazwischen wird als Luftlinie ergänzt.`,7000);
+});
 
 /* ---------- Tastensperre ---------- */
 const slider=$('#slider'),thumb=$('#thumb');
@@ -841,7 +858,7 @@ function setLocked(on){
   if(R)R.locked=on;
   $('#lock').classList.toggle('on',on);
   resetThumb(true);
-  if(R)R.lastTouch=performance.now();
+  if(R)R.lastTouch=nowMs();
 }
 function lockNow(){if(R&&R.state==='run'){setLocked(true);paint()}}
 function maxX(){return slider.clientWidth-thumb.clientWidth-8}
@@ -858,7 +875,7 @@ thumb.addEventListener('pointerup',endDrag);
 thumb.addEventListener('pointercancel',()=>{drag=null;resetThumb(false)});
 // Berührungen während der Sperre abfangen (kein Scrollen / Durchklicken)
 $('#lock').addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
-document.addEventListener('pointerdown',()=>{if(R)R.lastTouch=performance.now()},true);
+document.addEventListener('pointerdown',()=>{if(R)R.lastTouch=nowMs()},true);
 
 /* ---------- Lauf-Engine ---------- */
 let R=null;
@@ -867,7 +884,7 @@ function startRun(id){const plan=plans.find(p=>p.id===id);if(plan)startPlan(plan
 // sess: ID einer Plan-Einheit (wird nach dem Lauf abgehakt), back: Ansicht nach Abbruch
 function startPlan(plan,sess,back){
   if(!('geolocation' in navigator)){alert('Dieses Gerät bietet kein GPS im Browser.');return}
-  R={plan,sess,back,kind:sess?'coach':'iv',track:[],rawDist:0,steps:buildSteps(plan),state:'wait',i:0,stepTime:0,stepDist:0,total:0,totalDist:0,paused:false,locked:false,lastTouch:performance.now(),last:performance.now(),kf:null,lastF:null,skips:0,spd:null,spdT:0,win:[],log:[],started:new Date().toISOString(),acc:null,flags:{},err:null};
+  R={plan,sess,back,kind:sess?'coach':'iv',track:[],rawDist:0,steps:buildSteps(plan),state:'wait',i:0,stepTime:0,stepDist:0,total:0,totalDist:0,paused:false,locked:false,lastTouch:nowMs(),last:nowMs(),kf:null,lastF:null,skips:0,spd:null,spdT:0,win:[],log:[],started:new Date().toISOString(),acc:null,flags:{},err:null};
   $('#rtitle').textContent=plan.name;$('#rplan').textContent=plan.sum||summ(plan);$('#runwait').hidden=false;$('#runlive').hidden=true;
   $('#wseg').innerHTML=segHTML(R.steps);$('#rtl').innerHTML=$('#ltl').innerHTML=segHTML(R.steps,true);
   $('#v-run').classList.remove('paused');paintPauseBtn();setRunKind();
@@ -881,10 +898,10 @@ function stopSensors(){if(!R)return;clearInterval(R.timer);try{navigator.geoloca
 
 function onPosErr(e){if(!R)return;R.err=e.code===1?'Standort verweigert':'GPS-Fehler';paintGps()}
 function onPos(p){
-  if(!R)return;R.err=null;
+  if(!R)return;R.err=null;R.fixT=nowMs();R.gpsStale=false;
   const c=p.coords;R.acc=c.accuracy;paintGps();
   const sp=(typeof c.speed==='number'&&isFinite(c.speed)&&c.speed>=0)?c.speed:null;
-  const tn=performance.now()/1000;
+  const tn=nowMs()/1000;
   // Doppler-Geschwindigkeit glätten (Zeitkonstante 3 s)
   if(R.state==='run'&&!R.paused&&sp!==null&&c.accuracy<=50){
     const dt=R.spdT?tn-R.spdT:null;
@@ -905,7 +922,7 @@ function onPos(p){
   if(settings.kalman){
     const hv=sp!==null&&sp>0.8&&typeof c.heading==='number'&&isFinite(c.heading)&&c.heading>=0;
     let q=3.5;
-    if(hv){const h=c.heading*Math.PI/180;k.x+=sp*Math.sin(h)*dt;k.y+=sp*Math.cos(h)*dt;q=2}
+    if(hv&&dt<=10){const h=c.heading*Math.PI/180;k.x+=sp*Math.sin(h)*dt;k.y+=sp*Math.cos(h)*dt;q=2}
     k.v+=q*q*dt*dt;
     const g=k.v/(k.v+c.accuracy*c.accuracy);
     k.x+=g*(zx-k.x);k.y+=g*(zy-k.y);k.v*=(1-g);
@@ -920,7 +937,7 @@ function onPos(p){
     // Strecke: Punkt alle ≥ 5 m (gefilterte Position zurückgerechnet in lat/lon)
     const lt=R.track[R.track.length-1],la=k.lat0+k.y/111132,lo=k.lon0+k.x/k.mx;
     if(!lt||Math.hypot((la-lt[0])*111132,(lo-lt[1])*k.mx)>=5)R.track.push([+la.toFixed(6),+lo.toFixed(6),Math.round(R.total)]);
-    const now=performance.now()/1000;R.win.push({t:now,d:R.totalDist});
+    const now=nowMs()/1000;R.win.push({t:now,d:R.totalDist});
     while(R.win.length&&now-R.win[0].t>20)R.win.shift();
   }
 }
@@ -928,8 +945,9 @@ function paintGps(){
   if(!R)return;
   let cls='',txt='suche …';
   if(R.err){txt=R.err}
+  else if(R.gpsStale){txt='kein GPS'}
   else if(R.acc!=null){cls=R.acc<=15?'g':R.acc<=30?'y':'';txt=`GPS ±${Math.round(R.acc)} m`}
-  const e=$('#rgps');e.className='gps '+cls;e.textContent=R.acc!=null&&!R.err?`±${Math.round(R.acc)} m`:txt;
+  const e=$('#rgps');e.className='gps '+cls;e.textContent=R.acc!=null&&!R.err&&!R.gpsStale?`±${Math.round(R.acc)} m`:txt;
   $('#lgps').className='dot '+cls;
   const searching=!R.err&&R.acc==null;
   $('#gpscard').className='group gpscard '+(searching?'s':cls);
@@ -937,15 +955,15 @@ function paintGps(){
   $('#gpssub').textContent=R.err?(R.err==='Standort verweigert'?'Standortzugriff in den Einstellungen erlauben.':'Einen Moment warten oder neu starten.'):searching?'Bitte kurz stillhalten, am besten unter freiem Himmel.':`Genauigkeit ±${Math.round(R.acc)} m${cls==='g'?' · du kannst starten':' · warte auf ±15 m'}`;
 }
 function curPace(){
-  if(settings.doppler&&R.spd!=null&&performance.now()/1000-R.spdT<6)return R.spd>0.6?1000/R.spd:null;
+  if(settings.doppler&&R.spd!=null&&nowMs()/1000-R.spdT<6)return R.spd>0.6?1000/R.spd:null;
   const w=R.win;if(w.length<2)return null;
-  const now=performance.now()/1000,last=w[w.length-1];if(now-last.t>8)return null;
+  const now=nowMs()/1000,last=w[w.length-1];if(now-last.t>8)return null;
   const first=w.find(x=>last.t-x.t<=15)||w[0];const dd=last.d-first.d,dt=last.t-first.t;
   if(dd<6||dt<3)return null;return dt/dd*1000;
 }
 
 function go(){
-  unlockAudio();R.state='run';R.last=performance.now();R.lastTouch=performance.now();
+  unlockAudio();R.state='run';R.last=nowMs();R.lastTouch=nowMs();
   $('#runwait').hidden=true;$('#runlive').hidden=false;
   if(berlinOn()&&!R.race)say(['@start']);
   requestWake();enterStep(0);R.timer=setInterval(tick,250);saveLive();
@@ -976,7 +994,7 @@ function logStep(){
 function next(carry=0){logStep();if(R.i+1>=R.steps.length)finish(false);else{enterStep(R.i+1);R.stepTime=Math.max(0,carry)}}
 function skipStep(){if(R&&R.state==='run'&&confirm('Abschnitt überspringen?'))next()}
 function togglePause(){
-  if(!R||R.state!=='run')return;R.paused=!R.paused;if(R.paused&&R.track.length&&R.track[R.track.length-1])R.track.push(null);R.win=[];R.kf=null;R.spd=null;R.last=performance.now();
+  if(!R||R.state!=='run')return;R.paused=!R.paused;if(R.paused&&R.track.length&&R.track[R.track.length-1])R.track.push(null);R.win=[];R.kf=null;R.spd=null;R.last=nowMs();
   $('#v-run').classList.toggle('paused',R.paused);paintPauseBtn();paint();
 }
 function paintPauseBtn(){
@@ -988,8 +1006,9 @@ function endEarly(){if(confirm('Training beenden und speichern?'))finish(true)}
 
 function tick(){
   if(!R||R.state!=='run')return;
-  const now=performance.now(),dt=(now-R.last)/1000;R.last=now;
+  const now=nowMs(),dt=Math.max(0,(now-R.last)/1000);R.last=now;
   if(now-(R.lastSave||0)>5000){R.lastSave=now;saveLive()}
+  const stale=!!R.fixT&&now-R.fixT>12000;if(stale!==!!R.gpsStale){R.gpsStale=stale;paintGps()} // GPS liefert nichts mehr
   if(settings.autoLock&&!R.locked&&!R.paused&&now-R.lastTouch>10000)setLocked(true);
   if(R.paused){paint();return}
   R.stepTime+=dt;R.total+=dt;
@@ -1100,7 +1119,7 @@ function finish(early,quiet=false){
   let id=null;
   if(R.total>=10){
     id='r'+Date.now();
-    runs.push({id,kind:R.kind,...(rc&&rc.cal&&rc.cal.off>=2000?{cal:rc.cal}:{}),date:R.started,name:R.plan.name,time:R.total,dist:R.totalDist,pace:R.totalDist>30?R.total/R.totalDist*1000:0,log:R.log});
+    runs.push({id,kind:R.kind,...(rc&&rc.cal&&rc.cal.off>=2000?{cal:rc.cal}:{}),...(R.gap>=5?{gap:Math.round(R.gap)}:{}),date:R.started,name:R.plan.name,time:R.total,dist:R.totalDist,pace:R.totalDist>30?R.total/R.totalDist*1000:0,log:R.log});
     saveHist();
     if(R.track&&R.track.filter(Boolean).length>1)trackPut(id,R.track);
     if(R.sess&&!early)coachDone(R.sess,id);
@@ -1303,7 +1322,7 @@ function renderPlan(){
 /* Einheit */
 function openSess(id){curSess=id;renderSess();show('sess')}
 function startSess(id){const s=coach&&coach.sessions.find(x=>x.id===id);if(!s)return;
-  if(s.kind==='test'){startRace({D:s.plan.sets[0].dist,time:coach.cfg.time,ant:true},s.id,'coach');return} // Testlauf = Rennmodus
+  if(s.kind==='test'){startRace({D:s.plan.sets[0].dist,time:coach.cfg.time},s.id,'coach');return} // Testlauf = Rennmodus
   startPlan(sessPlan(s),s.id,'coach')}
 function toggleDone(){const s=coach.sessions.find(x=>x.id===curSess);if(!s)return;s.done=s.done?null:{run:null,date:new Date().toISOString()};saveCoach();renderSess()}
 const QUAL=['int','rep','tempo','race'];
@@ -1370,7 +1389,10 @@ function startFree(p,back='home'){
 }
 function freeTick(){
   const f=R.free,d=R.stepDist,el=R.stepTime,k=Math.floor(d/1000);
-  if(k>=1&&k!==f.lastK&&(!f.dist||f.dist-d>150)){f.lastK=k;const split=el-f.lastKmT;f.lastKmT=el;f.splits.push({k,time:split,pace:f.pace});
+  if(k>f.splits.length&&(!f.dist||f.dist-d>150)){
+    // nach einer GPS-Lücke können mehrere Kilometer auf einmal dazukommen → Zeit gleichmäßig aufteilen
+    const n=k-f.splits.length,split=(el-f.lastKmT)/n;f.lastKmT=el;
+    for(let j=0;j<n;j++)f.splits.push({k:f.splits.length+1,time:split,pace:f.pace});
     if(settings.voice||settings.musicMode){
       const dd=f.pace?split-f.pace:0,j=f.pace&&settings.hints?(dd>15?'faster':dd<-15?'slower':'ok'):null;
       if(settings.musicMode)playPattern(j==='faster'?'faster':j==='slower'?'slower':'t10');
@@ -1403,7 +1425,7 @@ function startRace(c,sess=null,back='home'){
   if(!T||T/(D/1000)<150||T/(D/1000)>600){alert('Bitte eine realistische Zielzeit eingeben.');return}
   startPlan({id:c.id||'race',name:c.name||`Rennen ${raceName(D)}`,warm:0,cool:0,nm:'Rennen',sets:[{reps:1,dist:D,pace:T/(D/1000),rest:0}],
     sum:`${raceName(D)} · Zielzeit ${fmtTime(T)} · Ø ${fmtPace(T/(D/1000))} /km · Negativ-Split`},sess,back);
-  if(R){R.kind=sess?'coach':'race';setRunKind(true);R.race={D,T,segs:raceSplits(D,T),ant:!!c.ant,lastH:0,lastKmT:0,half:0,last:0,splits:[]}}
+  if(R){R.kind=sess?'coach':'race';setRunKind(true);R.race={D,T,segs:raceSplits(D,T),lastH:0,lastKmT:0,half:0,last:0,splits:[]}}
 }
 // Ansage im Rennen: Berliner Stimme (wenn Teil 5 aufgenommen ist), sonst Töne; ohne Berliner Stimme iPhone-Stimme
 function raceTalk(text,tokens,pat){
@@ -1442,9 +1464,14 @@ const calSuggest=c=>c&&c.raw>0?Math.round((c.off/c.raw-1)*1000)/10:null;
 function applyCal(v){settings.corr=v;saveSettings();$('#s-corr').value=v;toast(`Distanz-Korrektur auf ${fmtPct(v)} gesetzt`);showRun(curRun)}
 function raceTick(s,rem){
   const rc=R.race,d=R.stepDist,el=R.stepTime,diff=racePlanAt(d)-el,h=Math.floor(d/500);
-  if(h>=1&&h!==rc.lastH&&rem>150){rc.lastH=h;
-    if(h%2===0){const k=h/2,split=el-rc.lastKmT;rc.splits.push({k,time:split,pace:rc.segs[k-1].pace});rc.lastKmT=el;raceKm(k,split,diff,rem)}
-    else if(d<2000){const p=curPace(),tp=raceSeg(d).pace;
+  const k=Math.floor(d/1000);
+  if(k>rc.splits.length&&rem>150){
+    // voller Kilometer; nach einer GPS-Lücke evtl. mehrere auf einmal → Zeit gleichmäßig aufteilen
+    const n=k-rc.splits.length,split=(el-rc.lastKmT)/n;rc.lastKmT=el;rc.lastH=h;
+    for(let j=0;j<n;j++){const kk=rc.splits.length+1;rc.splits.push({k:kk,time:split,pace:rc.segs[Math.min(kk,rc.segs.length)-1].pace})}
+    raceKm(k,split,diff,rem);
+  }else if(h>=1&&h!==rc.lastH&&rem>150){rc.lastH=h;
+    if(h%2===1&&d<2000){const p=curPace(),tp=raceSeg(d).pace;
       if(diff>4||(p&&p<tp-8))raceTalk('Zu schnell. Nimm Tempo raus.',['@rfast'],'slower')}
   }
   if(!rc.half&&rc.D>=3000&&d>=rc.D/2){rc.half=1;raceTalk(`Halbzeit. Hochgerechnet ${spTime(rc.T-diff)}.`,['@rhalf','rprog',...TK.time(rc.T-diff)],null)}
@@ -1495,6 +1522,7 @@ async function showRun(id){
   $('#detail').innerHTML=`<div class="hk-${k}" style="margin:4px 4px 0"><span class="tag">${HK[k].t}</span></div><div class="large" style="margin-top:6px">${esc(r.name)}</div><p class="foot" style="margin:-8px 4px 14px">${fmtDate(r.date)}</p>
   <div class="group stats"><div><b>${km2(r.dist)}</b><small>km</small></div><div><b>${fmtTime(r.time)}</b><small>Zeit</small></div><div><b>${fmtPace(r.pace)}</b><small>Ø min/km</small></div></div>
   ${cal}
+  ${r.gap?`<p class="foot">Der Bildschirm war bei diesem Lauf insgesamt ${fmtTime(r.gap)} aus. Die Zeit lief weiter, die Strecke in dieser Zeit ist als Luftlinie geschätzt.</p>`:''}
   ${sp.length>=2?`<div class="head">Tempo je Kilometer</div><div class="group cwrap"><div class="csub">Tippe auf einen Punkt · oben = schneller</div><div id="pchart" class="cbox"></div></div>`:''}
   <div id="trkwrap" hidden><div class="head">Strecke</div><div class="group cwrap"><div id="trk" class="cbox"></div></div>
     <div class="btnrow"><button class="btn" onclick="exportGpx()">GPX exportieren (Strava, Garmin …)</button></div></div>
@@ -1630,7 +1658,7 @@ async function exportGpx(){const r=runs.find(x=>x.id===curRun),t=r&&await trackG
    localStorage gesichert. Beim nächsten Öffnen: fortsetzen, speichern oder
    verwerfen. Bei Rennen läuft die Uhr während der Unterbrechung weiter,
    bei Training zählt die Lücke als Pause. */
-const LIVE_SKIP=new Set(['timer','watch','wl','wlOk','kf','lastF','win','spd','spdT','last','lastTouch','lastSave','locked','skips','acc','err']);
+const LIVE_SKIP=new Set(['timer','watch','wl','wlOk','kf','lastF','win','spd','spdT','last','lastTouch','lastSave','locked','skips','acc','err','hidAt','fixT','gpsStale']);
 function saveLive(){if(!R||R.state!=='run')return;const o={};for(const k in R)if(!LIVE_SKIP.has(k))o[k]=R[k];o.savedAt=Date.now();LS.set('iv_live',o)}
 function clearLive(){try{localStorage.removeItem('iv_live')}catch(e){}}
 const liveAge=o=>(Date.now()-(o.savedAt||0))/1000;
@@ -1643,7 +1671,7 @@ function resumeCard(){
 }
 function restoreR(o){
   R=Object.assign({},o,{state:'run',paused:false,locked:false,kf:null,lastF:null,win:[],spd:null,spdT:0,skips:0,acc:null,err:null,
-    flags:o.flags||{},track:o.track||[],last:performance.now(),lastTouch:performance.now(),lastSave:0});
+    flags:o.flags||{},track:o.track||[],last:nowMs(),lastTouch:nowMs(),lastSave:0});
   delete R.savedAt;
 }
 function resumeLive(){

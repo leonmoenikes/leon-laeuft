@@ -21,7 +21,7 @@ exports['Erledigte Einheit wird abgehakt, Testlauf startet im Rennmodus'] = asyn
   const r = await pg.evaluate(() => { const s = coach.sessions.find(x => x.id === 's0_2'); return [!!s.done, runs[runs.length - 1].kind]; });
   eq(r, [true, 'coach'], 'Einheit erledigt');
   await pg.evaluate(() => { show('coach'); startSess(coach.sessions.find(s => s.kind === 'test').id); });
-  eq(await pg.evaluate(() => [!!R.race, R.race.ant, R.kind]), [true, true, 'coach'], 'Testlauf als Rennen mit Antonia');
+  eq(await pg.evaluate(() => [!!R.race, R.kind]), [true, 'coach'], 'Testlauf als Rennen');
   noErrors(pg); await close(pg);
 };
 

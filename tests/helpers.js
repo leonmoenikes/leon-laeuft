@@ -67,7 +67,7 @@ const said = pg => pg.evaluate(() => __said.splice(0));
 
 // Lauf-Fortschritt setzen und einen Tick ausführen
 const sim = (pg, d, t) => pg.evaluate(([d, t]) => {
-  if (!R) return; R.stepDist = d; R.totalDist = d; R.stepTime = t; R.total = t; R.last = performance.now(); tick();
+  if (!R) return; R.stepDist = d; R.totalDist = d; R.stepTime = t; R.total = t; R.last = Date.now(); tick();
 }, [d, t]);
 
 // Vorlage der gewählten Art starten (erste Karte) und loslaufen
